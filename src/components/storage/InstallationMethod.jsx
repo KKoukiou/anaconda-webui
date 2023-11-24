@@ -24,6 +24,7 @@ import {
 } from "@patternfly/react-core";
 
 import { InstallationScenario } from "./InstallationScenario.jsx";
+
 import { InstallationDestination } from "./InstallationDestination.jsx";
 
 const _ = cockpit.gettext;
@@ -31,12 +32,16 @@ const _ = cockpit.gettext;
 export const InstallationMethod = ({
     deviceData,
     diskSelection,
+    isEfi,
     dispatch,
     idPrefix,
     isFormDisabled,
     onCritFail,
+    requiredSize,
+    scenarioAvailability,
     setIsFormValid,
     setIsFormDisabled,
+    setShowStorage,
     setStorageScenarioId,
     storageScenarioId,
 }) => {
@@ -49,10 +54,14 @@ export const InstallationMethod = ({
             <InstallationDestination
               deviceData={deviceData}
               diskSelection={diskSelection}
+              isEfi={isEfi}
               dispatch={dispatch}
               idPrefix={idPrefix}
               isFormDisabled={isFormDisabled}
               setIsFormValid={setIsFormValid}
+              requiredSize={requiredSize}
+              scenarioAvailability={scenarioAvailability}
+              setShowStorage={setShowStorage}
               setIsFormDisabled={setIsFormDisabled}
               onCritFail={onCritFail}
             />
@@ -63,9 +72,11 @@ export const InstallationMethod = ({
               idPrefix={idPrefix}
               onCritFail={onCritFail}
               isFormDisabled={isFormDisabled}
+              requiredSize={requiredSize}
               setIsFormValid={setIsFormValid}
               setStorageScenarioId={setStorageScenarioId}
               storageScenarioId={storageScenarioId}
+              scenarioAvailability={scenarioAvailability}
             />
         </Form>
     );

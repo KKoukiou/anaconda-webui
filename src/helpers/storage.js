@@ -21,6 +21,8 @@
  * @param {string} device - The name of the device
  * @returns {Array}
  */
+import cockpit from "cockpit";
+
 const getDeviceAncestors = (deviceData, device) => {
     // device ancestors including the device itself
     const ancestors = [];
@@ -115,4 +117,15 @@ export const hasDuplicateFields = (requests, fieldName) => {
  */
 export const isDuplicateRequestField = (requests, fieldName, fieldValue) => {
     return requests.filter((request) => request[fieldName] === fieldValue).length > 1;
+};
+
+export const requestsToDbus = (requests) => {
+    return requests.map(row => {
+        return {
+            "device-spec": cockpit.variant("s", row["device-spec"] || ""),
+            "format-type": cockpit.variant("s", row["format-type"] || ""),
+            "mount-point": cockpit.variant("s", row["mount-point"] || ""),
+            reformat: cockpit.variant("b", !!row.reformat),
+        };
+    });
 };

@@ -53,6 +53,7 @@ import {
     getLockedLUKSDevices,
     hasDuplicateFields,
     isDuplicateRequestField,
+    requestsToDbus,
 } from "../../helpers/storage.js";
 
 import "./MountPointMapping.scss";
@@ -139,17 +140,6 @@ const isReformatInvalid = (deviceData, request, requests) => {
     } else {
         return [false, ""];
     }
-};
-
-const requestsToDbus = (requests) => {
-    return requests.map(row => {
-        return {
-            "device-spec": cockpit.variant("s", row["device-spec"] || ""),
-            "format-type": cockpit.variant("s", row["format-type"] || ""),
-            "mount-point": cockpit.variant("s", row["mount-point"] || ""),
-            reformat: cockpit.variant("b", !!row.reformat),
-        };
-    });
 };
 
 /* Build the backend-requests object from the unapplied requests.

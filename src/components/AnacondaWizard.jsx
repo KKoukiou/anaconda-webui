@@ -34,7 +34,8 @@ import {
 
 import { AnacondaPage } from "./AnacondaPage.jsx";
 import { InstallationMethod, getPageProps as getInstallationMethodProps } from "./storage/InstallationMethod.jsx";
-import { getDefaultScenario } from "./storage/InstallationScenario.jsx";
+import { getDefaultScenario, scenarios, AvailabilityState } from "./storage/InstallationScenario.jsx";
+import { CockpitStorageIntegration } from "./storage/CockpitStorageIntegration.jsx";
 import { MountPointMapping, getPageProps as getMountPointMappingProps } from "./storage/MountPointMapping.jsx";
 import { DiskEncryption, getStorageEncryptionState, getPageProps as getDiskEncryptionProps } from "./storage/DiskEncryption.jsx";
 import { InstallationLanguage, getPageProps as getInstallationLanguageProps } from "./localization/InstallationLanguage.jsx";
@@ -44,7 +45,12 @@ import { ReviewConfiguration, ReviewConfigurationConfirmModal, getPageProps as g
 import { exitGui } from "../helpers/exit.js";
 import {
     getMountPointConstraints,
+    getDevices,
+    getDiskFreeSpace,
+    getDiskTotalSpace,
+    getRequiredDeviceSize,
 } from "../apis/storage_devicetree.js";
+import { findDuplicatesInArray } from "../helpers/utils.js";
 import {
     applyStorage,
     resetPartitioning,
@@ -52,15 +58,19 @@ import {
 import {
     setUsers,
 } from "../apis/users.js";
+import {
+    getRequiredSpace,
+} from "../apis/payloads";
 import { SystemTypeContext, OsReleaseContext } from "./Common.jsx";
 
 const _ = cockpit.gettext;
 const N_ = cockpit.noop;
 
-export const AnacondaWizard = ({ dispatch, storageData, localizationData, runtimeData, onCritFail, title, conf }) => {
+export const AnacondaWizard = ({ dispatch, storageData, localizationData, runtimeData, onCritFail, showStorage, setShowStorage, title, conf }) => {
     const [isFormDisabled, setIsFormDisabled] = useState(false);
     const [isFormValid, setIsFormValid] = useState(false);
     const [mountPointConstraints, setMountPointConstraints] = useState();
+    const [requiredSize, setRequiredSize] = useState();
     const [reusePartitioning, setReusePartitioning] = useState(false);
     const [stepNotification, setStepNotification] = useState();
     const [storageEncryption, setStorageEncryption] = useState(getStorageEncryptionState());
@@ -70,6 +80,73 @@ export const AnacondaWizard = ({ dispatch, storageData, localizationData, runtim
     const [currentStepId, setCurrentStepId] = useState();
     const osRelease = useContext(OsReleaseContext);
     const isBootIso = useContext(SystemTypeContext) === "BOOT_ISO";
+    const [scenarioAvailability, setScenarioAvailability] = useState(Object.fromEntries(
+        scenarios.map((s) => [s.id, new AvailabilityState()])
+    ));
+    const [diskTotalSpace, setDiskTotalSpace] = useState();
+    const [diskFreeSpace, setDiskFreeSpace] = useState();
+    const [hasFilesystems, setHasFilesystems] = useState();
+    const [duplicateDeviceNames, setDuplicateDeviceNames] = useState([]);
+    const selectedDisks = storageData.diskSelection.selectedDisks;
+
+    useEffect(() => {
+        const updateSizes = async () => {
+            const diskTotalSpace = await getDiskTotalSpace({ diskNames: selectedDisks }).catch(console.error);
+            const diskFreeSpace = await getDiskFreeSpace({ diskNames: selectedDisks }).catch(console.error);
+            const devices = await getDevices().catch(console.error);
+            const _duplicateDeviceNames = findDuplicatesInArray(devices);
+
+            setDuplicateDeviceNames(_duplicateDeviceNames);
+            setDiskTotalSpace(diskTotalSpace);
+            setDiskFreeSpace(diskFreeSpace);
+        };
+        updateSizes();
+    }, [selectedDisks]);
+
+    useEffect(() => {
+        const newAvailability = {};
+
+        if ([diskTotalSpace, diskFreeSpace, hasFilesystems, mountPointConstraints, requiredSize].some(itm => itm === undefined)) {
+            return;
+        }
+
+        for (const scenario of scenarios) {
+            const availability = scenario.check({
+                diskFreeSpace,
+                diskTotalSpace,
+                duplicateDeviceNames,
+                mountPointConstraints,
+                hasFilesystems,
+                requiredSize,
+                storageScenarioId,
+            });
+            newAvailability[scenario.id] = availability;
+        }
+        setScenarioAvailability(newAvailability);
+    }, [
+        diskFreeSpace,
+        diskTotalSpace,
+        duplicateDeviceNames,
+        hasFilesystems,
+        mountPointConstraints,
+        requiredSize,
+        storageData.devices,
+        storageScenarioId,
+    ]);
+
+    useEffect(() => {
+        getDevices().then(res => {
+            const _duplicateDeviceNames = findDuplicatesInArray(res);
+            setDuplicateDeviceNames(_duplicateDeviceNames);
+            setIsFormValid(_duplicateDeviceNames.length === 0);
+        }, onCritFail({ context: N_("Failed to get device names.") }));
+    }, [storageData.devices, onCritFail, setIsFormValid]);
+
+    useEffect(() => {
+        const hasFilesystems = selectedDisks.some(device => storageData.devices[device]?.children.v.some(child => storageData.devices[child]?.formatData.mountable.v || storageData.devices[child]?.formatData.type.v === "luks"));
+
+        setHasFilesystems(hasFilesystems);
+    }, [selectedDisks, storageData.devices]);
 
     const availableDevices = useMemo(() => {
         return Object.keys(storageData.devices);
@@ -81,6 +158,16 @@ export const AnacondaWizard = ({ dispatch, storageData, localizationData, runtim
             setMountPointConstraints(mountPointConstraints);
         };
         updateMountPointConstraints();
+    }, []);
+
+    useEffect(() => {
+        const updateRequiredSize = async () => {
+            const requiredSpace = await getRequiredSpace().catch(console.error);
+            const requiredSize = await getRequiredDeviceSize({ requiredSpace }).catch(console.error);
+
+            setRequiredSize(requiredSize);
+        };
+        updateRequiredSize();
     }, []);
 
     useEffect(() => {
@@ -97,7 +184,7 @@ export const AnacondaWizard = ({ dispatch, storageData, localizationData, runtim
          * but for custom mount assignment we try to reuse the partitioning when possible.
          */
         setReusePartitioning(false);
-    }, [availableDevices, storageData.diskSelection.selectedDisks]);
+    }, [availableDevices, selectedDisks]);
 
     const language = useMemo(() => {
         for (const l of Object.keys(localizationData.languages)) {
@@ -108,6 +195,7 @@ export const AnacondaWizard = ({ dispatch, storageData, localizationData, runtim
             }
         }
     }, [localizationData]);
+
     const stepsOrder = [
         {
             component: InstallationLanguage,
@@ -119,12 +207,17 @@ export const AnacondaWizard = ({ dispatch, storageData, localizationData, runtim
             data: {
                 deviceData: storageData.devices,
                 diskSelection: storageData.diskSelection,
+                // HACK - is there a more official source for this?
+                isEfi: mountPointConstraints?.some(c => c["required-filesystem-type"]?.v === "efi"),
                 dispatch,
+                requiredSize,
+                scenarioAvailability,
                 storageScenarioId,
                 setStorageScenarioId: (scenarioId) => {
                     window.sessionStorage.setItem("storage-scenario-id", scenarioId);
                     setStorageScenarioId(scenarioId);
-                }
+                },
+                setShowStorage,
             },
             ...getInstallationMethodProps({ isBootIso, osRelease, isFormValid })
         },
@@ -276,14 +369,33 @@ export const AnacondaWizard = ({ dispatch, storageData, localizationData, runtim
         );
     }
 
-    const firstVisibleStepIndex = steps.findIndex(step => !step.props.isHidden) + 1;
+    const startIndex = steps.findIndex(step => {
+        // Find the first step that is not hidden if the Wizard is opening for the first time.
+        // Otherwise, find the first step that was last visited.
+        return currentStepId ? step.props.id === currentStepId : !step.props.isHidden;
+    }) + 1;
+
+    if (showStorage) {
+        return (
+            <CockpitStorageIntegration
+              deviceData={storageData.devices}
+              selectedDisks={storageData.diskSelection}
+              dispatch={dispatch}
+              mountPointConstraints={mountPointConstraints}
+              onCritFail={onCritFail}
+              requiredSize={requiredSize}
+              scenarioAvailability={scenarioAvailability}
+              setStorageScenarioId={setStorageScenarioId}
+              setShowStorage={setShowStorage} />
+        );
+    }
 
     return (
         <PageSection type={PageSectionTypes.wizard} variant={PageSectionVariants.light}>
             <Wizard
               id="installation-wizard"
               isVisitRequired
-              startIndex={firstVisibleStepIndex}
+              startIndex={startIndex}
               footer={<Footer
                 onCritFail={onCritFail}
                 isFormValid={isFormValid}
@@ -351,7 +463,9 @@ const Footer = ({
             });
         } else if (activeStep.id === "installation-review") {
             setNextWaitsConfirmation(true);
-        } else if (activeStep.id === "mount-point-mapping") {
+        } else if (
+            activeStep.id === "mount-point-mapping"
+        ) {
             setIsFormDisabled(true);
 
             applyStorage({

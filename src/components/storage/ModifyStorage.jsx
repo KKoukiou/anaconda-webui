@@ -15,127 +15,21 @@
  * along with This program; If not, see <http://www.gnu.org/licenses/>.
  */
 import cockpit from "cockpit";
-import React, { useState } from "react";
+import React, { useContext } from "react";
 
 import {
     Button,
-    Modal,
-    Text,
-    TextContent,
-    TextVariants,
 } from "@patternfly/react-core";
-import { WrenchIcon, ExternalLinkAltIcon } from "@patternfly/react-icons";
+import {
+    WrenchIcon,
+} from "@patternfly/react-icons";
+
+import { TargetSystemRootContext } from "../Common.jsx";
 
 const _ = cockpit.gettext;
-const N_ = cockpit.noop;
 
-let cockpitWindow = null;
-
-const startCockpitStorage = (diskSelection, onStart, onStarted, errorHandler) => {
-    window.localStorage.setItem("cockpit_anaconda",
-                                JSON.stringify({
-                                    mount_point_prefix: "/mnt/sysimage",
-                                    available_devices: diskSelection.usableDisks.map(d => "/dev/" + d),
-                                }));
-    cockpitWindow = window.open("/cockpit/@localhost/storage/index.html", "storage-tab");
-    onStart();
-    onStarted();
-};
-
-const stopCockpitStorage = () => {
-    if (cockpitWindow) {
-        cockpitWindow.close();
-        cockpitWindow = null;
-    }
-};
-
-const StorageModifiedModal = ({ onClose, onRescan }) => {
-    return (
-        <Modal
-          id="storage-modified-modal"
-          title={_("Modified storage")}
-          isOpen
-          variant="small"
-          showClose={false}
-          footer={
-              <>
-                  <Button
-                    onClick={() => { stopCockpitStorage(); onClose(); onRescan() }}
-                    variant="primary"
-                    id="storage-modified-modal-rescan-btn"
-                    key="rescan"
-                  >
-                      {_("Rescan storage")}
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => { stopCockpitStorage(); onClose() }}
-                    id="storage-modified-modal-ignore-btn"
-                    key="ignore"
-                  >
-                      {_("Ignore")}
-                  </Button>
-              </>
-          }>
-            {_("If you have made changes on partitions or disks, please rescan storage.")}
-        </Modal>
-    );
-};
-
-const ModifyStorageModal = ({ diskSelection, onClose, onToolStarted, errorHandler }) => {
-    const [toolIsStarting, setToolIsStarting] = useState(false);
-    const onStart = () => setToolIsStarting(true);
-    const onStarted = () => { setToolIsStarting(false); onToolStarted() };
-    return (
-        <Modal
-          id="modify-storage-modal"
-          title={_("Modify storage")}
-          isOpen
-          variant="small"
-          titleIconVariant="warning"
-          showClose={false}
-          footer={
-              <>
-                  <Button
-                    onClick={() => startCockpitStorage(
-                        diskSelection,
-                        onStart,
-                        onStarted,
-                        errorHandler
-                    )}
-                    id="modify-storage-modal-modify-btn"
-                    icon={toolIsStarting ? null : <ExternalLinkAltIcon />}
-                    isLoading={toolIsStarting}
-                    isDisabled={toolIsStarting}
-                    variant="primary"
-                  >
-                      {_("Launch storage editor")}
-                  </Button>
-                  <Button
-                    variant="link"
-                    onClick={() => onClose()}
-                    id="modify-storage-modal-cancel-btn"
-                    key="cancel"
-                    isDisabled={toolIsStarting}
-                  >
-                      {_("Cancel")}
-                  </Button>
-              </>
-          }>
-            <TextContent>
-                <Text component={TextVariants.p}>
-                    {_("The storage editor lets you resize, delete, and create partitions. It can set up LVM and much more.")}
-                </Text>
-                <Text component={TextVariants.p}>
-                    {_("Changes made in the storage editor will directly affect your storage.")}
-                </Text>
-            </TextContent>
-        </Modal>
-    );
-};
-
-export const ModifyStorage = ({ idPrefix, diskSelection, onCritFail, onRescan }) => {
-    const [openedDialog, setOpenedDialog] = useState("");
+export const ModifyStorage = ({ idPrefix, onCritFail, onRescan, setShowStorage, usableDevices, isEfi }) => {
+    const targetSystemRoot = useContext(TargetSystemRootContext);
 
     return (
         <>
@@ -143,21 +37,19 @@ export const ModifyStorage = ({ idPrefix, diskSelection, onCritFail, onRescan })
               id={idPrefix + "-modify-storage"}
               variant="link"
               icon={<WrenchIcon />}
-              onClick={() => setOpenedDialog("modify")}>
+              onClick={() => {
+                  window.localStorage.setItem("cockpit_anaconda",
+                                              JSON.stringify({
+                                                  mount_point_prefix: targetSystemRoot,
+                                                  available_devices: usableDevices,
+                                                  efi: isEfi,
+                                              })
+                  );
+                  setShowStorage(true);
+              }}
+            >
                 {_("Modify storage")}
             </Button>
-            {openedDialog === "modify" &&
-            <ModifyStorageModal
-              diskSelection={diskSelection}
-              onClose={() => setOpenedDialog("")}
-              onToolStarted={() => setOpenedDialog("rescan")}
-              errorHandler={onCritFail({ context: N_("Modifying the storage failed.") })}
-            />}
-            {openedDialog === "rescan" &&
-            <StorageModifiedModal
-              onClose={() => setOpenedDialog("")}
-              onRescan={onRescan}
-            />}
         </>
     );
 };

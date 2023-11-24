@@ -49,6 +49,7 @@ import {
     runStorageTask,
     scanDevicesWithTask,
 } from "../../apis/storage.js";
+
 import { resetPartitioning } from "../../apis/storage_partitioning.js";
 import { setSelectedDisks } from "../../apis/storage_disks_selection.js";
 
@@ -314,11 +315,15 @@ const rescanDisks = (setIsRescanningDisks, refUsableDisks, dispatch, errorHandle
 export const InstallationDestination = ({
     deviceData,
     diskSelection,
+    isEfi,
     dispatch,
     idPrefix,
     isFormDisabled,
+    requiredSize,
+    scenarioAvailability,
     setIsFormValid,
     setIsFormDisabled,
+    setShowStorage,
     onRescanDisks,
     onCritFail
 }) => {
@@ -434,8 +439,14 @@ export const InstallationDestination = ({
                         )}
                     {rescanDisksButton}
                     <ModifyStorage
-                      idPrefix={idPrefix} diskSelection={diskSelection}
-                      onCritFail={onCritFail} onRescan={onClickRescan} />
+                      idPrefix={idPrefix}
+                      onCritFail={onCritFail} onRescan={onClickRescan}
+                      requiredSize={refUsableDisks}
+                      scenarioAvailability={scenarioAvailability}
+                      setShowStorage={setShowStorage}
+                      usableDevices={diskSelection.usableDisks.map(disk => deviceData[disk].path.v)}
+                      isEfi={isEfi}
+                    />
                 </Flex>
             </FormGroup>
         </>
