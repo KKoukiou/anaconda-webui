@@ -75,17 +75,10 @@ export const getRequiredDeviceSize = ({ requiredSpace }) => {
 };
 
 /**
- * @returns {Promise}           List of all mount points required on the platform
+ * @returns {Promise}           List of mount point constraints for the platform
  */
-export const getRequiredMountPoints = () => {
-    return callViewer("GetRequiredMountPoints", []);
-};
-
-/**
- * @returns {Promise}           List of all recommended mount points on the platform
- */
-export const getRecommendedMountPoints = () => {
-    return callViewer("GetRecommendedMountPoints", []);
+export const getMountPointConstraints = () => {
+    return callViewer("GetMountPointConstraints", []);
 };
 
 /**

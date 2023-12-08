@@ -63,12 +63,11 @@ const _ = cockpit.gettext;
  * - rows with required mount points
  * - rows with mount points already selected by the user
  * @param {Array} requests - partitioning requests
- * @param {Array} requiredMountPoints - required mount points
+ * @param {Array} mountPointConstraints - constraints on mount points
  * @returns {Array} filtered requests
  */
-const getInitialRequests = (requests, requiredMountPoints, recommendedMountPoints) => {
-    const constrainedMountPoints = requiredMountPoints.concat(recommendedMountPoints);
-    const constrainedRequests = constrainedMountPoints.map((mountPoint, idx) => {
+const getInitialRequests = (requests, mountPointConstraints) => {
+    const constrainedRequests = mountPointConstraints.map((mountPoint, idx) => {
         const originalRequest = requests.find(request => request["mount-point"] === mountPoint["mount-point"].v);
         const request = ({ "mount-point": mountPoint["mount-point"].v, reformat: mountPoint["mount-point"].v === "/" });
 
@@ -81,7 +80,7 @@ const getInitialRequests = (requests, requiredMountPoints, recommendedMountPoint
 
     const extraRequests = requests.filter(r => (
         r["mount-point"] &&
-        !constrainedMountPoints.find(m => m["mount-point"].v === r["mount-point"])
+        !mountPointConstraints.find(m => m["mount-point"].v === r["mount-point"])
     )) || [];
 
     return [...constrainedRequests, ...extraRequests];
@@ -180,10 +179,9 @@ const updatePartitioningRequests = ({ requests, newRequests, partitioning }) => 
     });
 };
 
-const isDeviceMountPointInvalid = (deviceData, requiredMountPoints, recommendedMountPoints, request) => {
+const isDeviceMountPointInvalid = (deviceData, mountPointConstraints, request) => {
     const device = request["device-spec"];
-    const constrainedMountPoints = requiredMountPoints.concat(recommendedMountPoints);
-    const constrainedMountPointData = constrainedMountPoints.find(val => val["mount-point"].v === request["mount-point"]);
+    const constrainedMountPointData = mountPointConstraints.find(val => val["mount-point"].v === request["mount-point"]);
 
     if (!device || !request["mount-point"] || !constrainedMountPointData) {
         return [false, ""];
@@ -303,10 +301,10 @@ const DeviceColumnSelect = ({ deviceData, devices, idPrefix, isRequiredMountPoin
     );
 };
 
-const DeviceColumn = ({ deviceData, devices, requiredMountPoints, recommendedMountPoints, idPrefix, isRequiredMountPoint, handleRequestChange, lockedLUKSDevices, request, requests, requestIndex }) => {
+const DeviceColumn = ({ deviceData, devices, mountPointConstraints, idPrefix, isRequiredMountPoint, handleRequestChange, lockedLUKSDevices, request, requests, requestIndex }) => {
     const device = request["device-spec"];
     const duplicatedDevice = isDuplicateRequestField(requests, "device-spec", device);
-    const [deviceInvalid, errorMessage] = isDeviceMountPointInvalid(deviceData, requiredMountPoints, recommendedMountPoints, request);
+    const [deviceInvalid, errorMessage] = isDeviceMountPointInvalid(deviceData, mountPointConstraints, request);
 
     return (
         <Flex direction={{ default: "column" }} spaceItems={{ default: "spaceItemsNone" }}>
@@ -397,12 +395,11 @@ const getRequestRow = ({
     request,
     requestIndex,
     requests,
-    requiredMountPoints,
-    recommendedMountPoints,
+    mountPointConstraints,
 }) => {
     const columnClassName = idPrefix + "__column";
-    const isRequiredMountPoint = !!requiredMountPoints.find(val => val["mount-point"].v === request["mount-point"]);
-    const isRecommendedMountPoint = !!recommendedMountPoints.find(val => val["mount-point"].v === request["mount-point"]);
+    const isRequiredMountPoint = mountPointConstraints.filter(val => val.required.v && val["mount-point"].v === request["mount-point"]).length > 0;
+    const isRecommendedMountPoint = mountPointConstraints.filter(val => val.recommended.v && val["mount-point"].v === request["mount-point"]).length > 0;
     const duplicatedMountPoint = isDuplicateRequestField(requests, "mount-point", request["mount-point"]);
     const rowId = idPrefix + "-row-" + (requestIndex + 1);
 
@@ -435,8 +432,7 @@ const getRequestRow = ({
                       request={request}
                       requestIndex={requestIndex}
                       requests={requests}
-                      requiredMountPoints={requiredMountPoints}
-                      recommendedMountPoints={recommendedMountPoints}
+                      mountPointConstraints={mountPointConstraints}
                     />
                 ),
                 props: { className: columnClassName }
@@ -494,8 +490,7 @@ const RequestsTable = ({
     setStepNotification,
     partitioningDataPath,
     requests,
-    requiredMountPoints,
-    recommendedMountPoints,
+    mountPointConstraints,
     setIsFormValid,
 }) => {
     const currentPartitioning = useRef();
@@ -512,11 +507,11 @@ const RequestsTable = ({
 
         currentPartitioning.current = partitioningDataPath;
 
-        const initialRequests = getInitialRequests(requests, requiredMountPoints, recommendedMountPoints);
+        const initialRequests = getInitialRequests(requests, mountPointConstraints);
         setUnappliedRequests(initialRequests);
 
         setIsFormValid(getRequestsValid(initialRequests, deviceData));
-    }, [deviceData, setIsFormValid, partitioningDataPath, requests, requiredMountPoints, recommendedMountPoints]);
+    }, [deviceData, setIsFormValid, partitioningDataPath, requests, mountPointConstraints]);
 
     const handleRequestChange = useCallback(({ mountPoint, deviceSpec, requestIndex, reformat, remove }) => {
         const newRequests = [...unappliedRequests];
@@ -576,8 +571,7 @@ const RequestsTable = ({
                               request,
                               requestIndex: idx,
                               requests: unappliedRequests,
-                              requiredMountPoints,
-                              recommendedMountPoints,
+                              mountPointConstraints,
                           })
                       ))} />
             <div>
@@ -616,9 +610,7 @@ export const MountPointMapping = ({
     dispatch,
     idPrefix,
     partitioningData,
-    requiredMountPoints,
-
-    recommendedMountPoints,
+    mountPointConstraints,
     reusePartitioning,
     setIsFormValid,
     setReusePartitioning,
@@ -664,7 +656,7 @@ export const MountPointMapping = ({
                 />
             )}
             {!showLuksUnlock && (
-                (isLoadingNewPartitioning || requiredMountPoints === null || recommendedMountPoints === null || !partitioningData?.requests)
+                (isLoadingNewPartitioning || mountPointConstraints === null || !partitioningData?.requests)
                     ? (
                         <EmptyStatePanel loading />
                     )
@@ -676,8 +668,7 @@ export const MountPointMapping = ({
                           setStepNotification={setStepNotification}
                           partitioningDataPath={partitioningData?.path}
                           requests={partitioningData?.requests}
-                          requiredMountPoints={requiredMountPoints}
-                          recommendedMountPoints={recommendedMountPoints}
+                          mountPointConstraints={mountPointConstraints}
                           setIsFormValid={setIsFormValid}
                         />
                     ))}
