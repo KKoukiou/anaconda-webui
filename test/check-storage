@@ -37,6 +37,7 @@ class TestStorage(anacondalib.VirtInstallMachineCase, StorageHelpers):
 
     @nondestructive
     def testLocalStandardDisks(self):
+        # trigger triple test
         b = self.browser
         i = Installer(b, self.machine)
         s = Storage(b, self.machine)
@@ -85,6 +86,7 @@ class TestStorage(anacondalib.VirtInstallMachineCase, StorageHelpers):
     @nondestructive
     @skipImage("blivet-gui missing on fedora-eln image", "fedora-eln-boot")
     def testModifyStorage(self):
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, self.machine)
@@ -136,6 +138,7 @@ class TestStorage(anacondalib.VirtInstallMachineCase, StorageHelpers):
     # Disk initialization mode is applied to the backend in the test.
     # Partitioning is not applied to the backend in the test.
     def testAutopartitioningEncrypted(self):
+        # trigger triple test
         b = self.browser
         i = Installer(b, self.machine)
         s = Storage(b, self.machine)
@@ -234,6 +237,7 @@ class TestStorage(anacondalib.VirtInstallMachineCase, StorageHelpers):
     # the partitioning should be reset.
     @nondestructive
     def testAutopartitioningReset(self):
+        # trigger triple test
         b = self.browser
         i = Installer(b, self.machine)
         s = Storage(b, self.machine)
@@ -287,6 +291,7 @@ class TestStorage(anacondalib.VirtInstallMachineCase, StorageHelpers):
         # Test which partitioning object ends up being the AppliedPartitioning
         # when we go back and forward the storage steps
 
+        # trigger triple test
         b = self.browser
         i = Installer(b, self.machine)
         s = Storage(b, self.machine)
@@ -340,6 +345,7 @@ class TestStorageExtraDisks(anacondalib.VirtInstallMachineCase, StorageHelpers):
     efi = False
 
     def testLocalDisksSyncNew(self):
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -389,6 +395,7 @@ class TestStorageMountPoints(anacondalib.VirtInstallMachineCase, StorageHelpers)
     @nondestructive
     @skipImage("btrfs support missing on fedora-eln image", "fedora-eln-boot")
     def testBasic(self):
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -479,6 +486,7 @@ class TestStorageMountPoints(anacondalib.VirtInstallMachineCase, StorageHelpers)
 
     @nondestructive
     def testNoRootMountPoint(self):
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -510,6 +518,7 @@ class TestStorageMountPoints(anacondalib.VirtInstallMachineCase, StorageHelpers)
         i.check_next_disabled()
 
     def testMultipleDisks(self):
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -581,6 +590,7 @@ class TestStorageMountPoints(anacondalib.VirtInstallMachineCase, StorageHelpers)
 
     @nondestructive
     def testEncryptedUnlock(self):
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -655,6 +665,7 @@ class TestStorageMountPoints(anacondalib.VirtInstallMachineCase, StorageHelpers)
 
     def testEncryptedUnlockRAIDonLUKS(self):
         # RAID on LUKS: partition -> LUKS -> RAID -> filesystem
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -705,6 +716,7 @@ class TestStorageMountPoints(anacondalib.VirtInstallMachineCase, StorageHelpers)
 
     def testEncryptedUnlockLUKSonRAID(self):
         # LUKS on RAID: partition -> RAID -> LUKS -> filesystem
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -758,6 +770,7 @@ class TestStorageMountPoints(anacondalib.VirtInstallMachineCase, StorageHelpers)
     @nondestructive
     @skipImage("btrfs support missing on fedora-eln image", "fedora-eln-boot")
     def testBtrfsSubvolumes(self):
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -885,6 +898,7 @@ class TestStorageMountPoints(anacondalib.VirtInstallMachineCase, StorageHelpers)
         # Prevent the user from performing an installation if multiple devices exist with the same name
         # https://bugzilla.redhat.com/show_bug.cgi?id=2237878
         # TODO: Make the test nondestructive
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -917,6 +931,7 @@ class TestStorageMountPoints(anacondalib.VirtInstallMachineCase, StorageHelpers)
 
     @nondestructive
     def testLVM(self):
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -1004,6 +1019,7 @@ class TestStorageMountPoints(anacondalib.VirtInstallMachineCase, StorageHelpers)
 
     @nondestructive
     def testUnusableFormats(self):
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)
@@ -1029,6 +1045,7 @@ class TestStorageMountPointsEFI(anacondalib.VirtInstallMachineCase):
     efi = True
 
     def testBasic(self):
+        # trigger triple test
         b = self.browser
         m = self.machine
         i = Installer(b, m)

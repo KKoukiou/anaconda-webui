@@ -98,6 +98,7 @@ class StorageDestination():
         self.browser.wait_in_text("#disks-changed-alert", f"The following disk was detected: {disk}")
 
     @log_step(snapshots=True)
+    # This is timing out quite often
     def rescan_disks(self):
         b = self.browser
         b.click(f"#{self._step}-rescan-disks")
