@@ -634,6 +634,9 @@ export const MountPointMapping = ({
 
     const isLoadingNewPartitioning = !reusePartitioning || usedPartitioning !== partitioningData.path;
     const showLuksUnlock = lockedLUKSDevices?.length > 0 && !skipUnlock;
+    console.log("Loading new partitioning:", isLoadingNewPartitioning ? "loading" : "ready");
+    console.log("No required mount points:", !requiredMountPoints ? "loading" : "ready");
+    console.log("Partitioning changed:", usedPartitioning !== partitioningData.path ? "loading" : "ready");
 
     return (
         <>
