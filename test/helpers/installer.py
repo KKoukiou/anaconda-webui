@@ -33,7 +33,7 @@ class InstallerSteps(UserDict):
 
     _steps_jump = {}
     _steps_jump[WELCOME] = [INSTALLATION_METHOD]
-    _steps_jump[INSTALLATION_METHOD] = [DISK_ENCRYPTION, CUSTOM_MOUNT_POINT]
+    _steps_jump[INSTALLATION_METHOD] = [DISK_ENCRYPTION, CUSTOM_MOUNT_POINT, ACCOUNTS]
     _steps_jump[DISK_ENCRYPTION] = [ACCOUNTS]
     _steps_jump[CUSTOM_MOUNT_POINT] = [ACCOUNTS]
     _steps_jump[ACCOUNTS] = [REVIEW]
@@ -43,6 +43,7 @@ class InstallerSteps(UserDict):
     _parent_steps = {}
     _parent_steps[DISK_ENCRYPTION] = DISK_CONFIGURATION
     _parent_steps[CUSTOM_MOUNT_POINT] = DISK_CONFIGURATION
+    _parent_steps[ACCOUNTS] = INSTALLATION_METHOD
 
     _steps_callbacks = {}
     _steps_callbacks[ACCOUNTS] = create_user
