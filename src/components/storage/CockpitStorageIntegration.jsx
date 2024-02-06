@@ -85,6 +85,11 @@ const ReturnToInstallationButton = ({ isDisabled, onAction }) => (
 );
 
 export const CockpitStorageIntegration = ({
+    scenarioAvailability,
+    scenarioPartitioningMapping,
+    selectedDisks,
+    setStorageScenarioId,
+    deviceData,
     dispatch,
     onCritFail,
     setShowStorage,
@@ -146,59 +151,45 @@ export const CockpitStorageIntegration = ({
     );
 };
 
-export const preparePartitioning = ({ deviceData, newMountPoints }) => {
-    let partitioning;
-    return setBootloaderDrive({ drive: "" })
-            .then(() => createPartitioning({ method: "MANUAL" }))
-            .then(part => {
-                partitioning = part;
-                return gatherRequests({ partitioning });
-            })
-            .then(_requests => {
-                const addRequestFromSubtree = (devicePath, object = {}) => {
-                    let deviceSpec = Object.keys(deviceData).includes(devicePath) ? devicePath : getDeviceNameByPath(deviceData, devicePath);
-                    const { type, dir, content, subvolumes } = object;
-                    let mountPoint = dir;
+export const preparePartitioning = async ({ deviceData, newMountPoints }) => {
+    try {
+        await setBootloaderDrive({ drive: "" });
 
-                    if (type === "crypto") {
-                        deviceSpec = deviceData[deviceSpec].children.v[0];
-                        mountPoint = content.dir;
-                    }
+        const partitioning = await createPartitioning({ method: "MANUAL" });
+        const requests = await gatherRequests({ partitioning });
 
-                    if (deviceSpec && (mountPoint || type === "swap")) {
-                        const existingRequestIndex = (
-                            requests.findIndex(request => request["device-spec"].v === deviceSpec)
-                        );
+        const addRequest = (devicePath, object) => {
+            const { dir, type } = object;
+            const deviceSpec = getDeviceNameByPath(deviceData, devicePath);
 
-                        if (existingRequestIndex !== -1) {
-                            requests[existingRequestIndex] = {
-                                ...requests[existingRequestIndex],
-                                "mount-point": cockpit.variant("s", mountPoint || type),
-                            };
-                        } else {
-                            requests.push({
-                                "mount-point": cockpit.variant("s", mountPoint || type),
-                                "device-spec": cockpit.variant("s", deviceSpec),
-                            });
-                        }
-                    }
+            if (deviceSpec && (dir || type === "swap")) {
+                const existingRequestIndex = (
+                    requests.findIndex(request => request["device-spec"].v === deviceSpec)
+                );
 
-                    if (subvolumes) {
-                        Object.keys(subvolumes).forEach(subvolume => {
-                            addRequestFromSubtree(subvolume, subvolumes[subvolume]);
-                        });
-                    }
-                };
+                if (existingRequestIndex !== -1) {
+                    requests[existingRequestIndex] = {
+                        "mount-point": cockpit.variant("s", dir || type),
+                        "device-spec": cockpit.variant("s", deviceSpec),
+                    };
+                } else {
+                    requests.push({
+                        "mount-point": cockpit.variant("s", dir || type),
+                        "device-spec": cockpit.variant("s", deviceSpec),
+                    });
+                }
+            }
+        };
 
-                const requests = [..._requests];
+        Object.keys(newMountPoints).forEach(usedDevice => {
+            addRequest(usedDevice, newMountPoints[usedDevice]);
+        });
 
-                Object.keys(newMountPoints).forEach(usedDevice => {
-                    addRequestFromSubtree(usedDevice, newMountPoints[usedDevice]);
-                });
-
-                return setManualPartitioningRequests({ partitioning, requests });
-            })
-            .then(() => partitioning);
+        await setManualPartitioningRequests({ partitioning, requests });
+        return partitioning;
+    } catch (error) {
+        console.error("Failed to prepare partitioning", error);
+    }
 };
 
 const CheckStorageDialog = ({
@@ -218,8 +209,8 @@ const CheckStorageDialog = ({
     const mountPointConstraints = useMountPointConstraints();
     const requiredSize = useRequiredSize();
 
-    const newMountPoints = useMemo(() => JSON.parse(window.sessionStorage.getItem("cockpit_mount_points") || "{}"), []);
-    const cockpitPassphrases = useMemo(() => JSON.parse(window.sessionStorage.getItem("cockpit_passphrases") || "{}"), []);
+    const newMountPoints = useMemo(() => JSON.parse(window.localStorage.getItem("cockpit_mount_points") || "{}"), []);
+    const cockpitPassphrases = useMemo(() => JSON.parse(window.localStorage.getItem("cockpit_passphrases") || "{}"), []);
 
     const useConfiguredStorage = useMemo(() => {
         const availability = checkConfiguredStorage({
@@ -299,20 +290,27 @@ const CheckStorageDialog = ({
             return;
         }
 
-        // CLEAR_PARTITIONS_NONE = 0
-        setInitializationMode({ mode: 0 })
-                .then(() => preparePartitioning({ deviceData, newMountPoints }))
-                .then(partitioning => {
-                    applyStorage({
-                        partitioning,
-                        onFail: exc => {
-                            setCheckStep();
-                            setError(exc);
-                        },
-                        onSuccess: () => setCheckStep(),
-                    });
-                })
-                .catch(setError);
+        const applyNewPartitioning = async () => {
+            // CLEAR_PARTITIONS_NONE = 0
+            try {
+                await setInitializationMode({ mode: 0 });
+                const partitioning = await preparePartitioning({ deviceData, newMountPoints });
+
+                applyStorage({
+                    partitioning,
+                    onFail: exc => {
+                        setCheckStep();
+                        setError(exc);
+                    },
+                    onSuccess: () => setCheckStep(),
+                });
+            } catch (exc) {
+                setCheckStep();
+                setError(exc);
+            }
+        };
+
+        applyNewPartitioning();
     }, [deviceData, checkStep, newMountPoints, useConfiguredStorage]);
 
     useEffect(() => {

@@ -41,12 +41,12 @@ export const ModifyStorage = ({ idPrefix, onCritFail, onRescan, setShowStorage, 
               variant="link"
               icon={<WrenchIcon />}
               onClick={() => {
-                  window.sessionStorage.setItem("cockpit_anaconda",
-                                                JSON.stringify({
-                                                    mount_point_prefix: targetSystemRoot,
-                                                    available_devices: selectedDevices,
-                                                    efi: isEfi,
-                                                })
+                  window.localStorage.setItem("cockpit_anaconda",
+                                              JSON.stringify({
+                                                  mount_point_prefix: targetSystemRoot,
+                                                  available_devices: selectedDevices,
+                                                  efi: isEfi,
+                                              })
                   );
                   setShowStorage(true);
               }}

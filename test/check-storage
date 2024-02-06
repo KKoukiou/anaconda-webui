@@ -1190,7 +1190,7 @@ class TestStorageCockpitIntegration(anacondalib.VirtInstallMachineCase, StorageC
         r.check_disk(disk, "16.1 GB vda (0x1af4)")
 
         r.check_disk_row(disk, 1, "vda2, 1.07 GB: mount, /boot")
-        r.check_disk_row(disk, 2, f"{vgname}-root, 6.01 GB: format as ext4, /")
+        r.check_disk_row(disk, 2, f"{vgname}-root, 6.01 GB: mount, /")
         r.check_disk_row(disk, 3, f"{vgname}-home, 8.12 GB: mount, /home")
         r.check_disk_row(disk, 4, f"{vgname}-swap, 898 MB: mount, swap")
 
