@@ -85,24 +85,12 @@ export const AnacondaWizard = ({ dispatch, onCritFail, showStorage, setShowStora
 
     let stepsOrder = [
         pageInstallationLanguage(),
-        {
-            data: {
-                scenarioPartitioningMapping,
-                setShowStorage,
-            },
-            ...pageInstallationMethod()
-        },
+        pageInstallationMethod(),
         {
             id: "disk-configuration",
             label: _("Disk configuration"),
             steps: [
-                {
-                    data: {
-                        reusePartitioning,
-                        setReusePartitioning,
-                    },
-                    ...pageMountPointMapping()
-                },
+                pageMountPointMapping(),
                 pageDiskEncryption()
             ]
         },
@@ -115,8 +103,12 @@ export const AnacondaWizard = ({ dispatch, onCritFail, showStorage, setShowStora
         dispatch,
         isFormDisabled,
         onCritFail,
+        reusePartitioning,
+        scenarioPartitioningMapping,
         setIsFormDisabled,
         setIsFormValid,
+        setReusePartitioning,
+        setShowStorage,
     };
 
     const getFlattenedStepsIds = (steps) => {
