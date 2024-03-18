@@ -60,12 +60,12 @@ const ReviewDescriptionList = ({ children }) => {
     );
 };
 
-const ReviewConfiguration = ({ idPrefix, setIsFormValid, storageScenarioId }) => {
+const ReviewConfiguration = ({ idPrefix, setIsFormValid }) => {
     const [encrypt, setEncrypt] = useState();
     const osRelease = useContext(OsReleaseContext);
     const localizationData = useContext(LanguageContext);
     const accounts = useContext(UsersContext);
-    const { devices, diskSelection, partitioning } = useContext(StorageContext);
+    const { devices, diskSelection, partitioning, storageScenarioId } = useContext(StorageContext);
 
     // Display custom footer
     const getFooter = useMemo(() => <CustomFooter storageScenarioId={storageScenarioId} />, [storageScenarioId]);
@@ -202,7 +202,8 @@ export const ReviewConfigurationConfirmModal = ({ idPrefix, onNext, setNextWaits
     );
 };
 
-const ReviewConfigurationFooterHelperText = ({ storageScenarioId }) => {
+const ReviewConfigurationFooterHelperText = () => {
+    const { storageScenarioId } = useContext(StorageContext);
     const reviewWarning = getScenario(storageScenarioId).screenWarning;
 
     return (
@@ -240,10 +241,12 @@ const CustomFooter = ({ storageScenarioId }) => {
     );
 };
 
-export const usePage = ({ storageScenarioId }) => {
+export const usePage = () => {
+    const { storageScenarioId } = useContext(StorageContext);
+
     return ({
         component: ReviewConfiguration,
-        footerHelperText: <ReviewConfigurationFooterHelperText storageScenarioId={storageScenarioId} />,
+        footerHelperText: <ReviewConfigurationFooterHelperText />,
         id: "installation-review",
         label: _("Review and install"),
         nextButtonText: getScenario(storageScenarioId)?.buttonLabel,
