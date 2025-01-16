@@ -35,7 +35,7 @@ TAR_ARGS = --sort=name --mtime "@$(shell git show --no-patch --format='%at')" --
 
 # Anaconda specific variables
 PAYLOAD=fedora-rawhide-anaconda-payload
-GITHUB_BASE=rhinstaller/anaconda-webui
+GITHUB_BASE=KKoukiou/anaconda-webui
 UPDATES_IMG=updates.img
 TEST_LIVE_OS=fedora-rawhide-live-boot
 
