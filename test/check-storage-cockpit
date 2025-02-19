@@ -20,7 +20,7 @@ from installer import Installer
 from review import Review
 from storage import Storage
 from storagelib import StorageCase  # pylint: disable=import-error
-from testlib import nondestructive, test_main  # pylint: disable=import-error
+from testlib import nondestructive, sit, test_main  # pylint: disable=import-error
 from utils import pretend_live_iso
 
 
@@ -182,6 +182,7 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
             "cockpit-storage-integration-check-storage-dialog-LVM",
             ignore=pixel_tests_ignore,
         )
+        sit()
         s.return_to_installation_confirm()
 
         s.set_partitioning("use-configured-storage")

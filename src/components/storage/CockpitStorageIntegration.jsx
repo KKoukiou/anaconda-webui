@@ -51,6 +51,7 @@ import {
     setBootloaderDrive,
 } from "../../apis/storage_bootloader.js";
 import {
+    activateDevice,
     unlockDevice,
 } from "../../apis/storage_devicetree.js";
 import {
@@ -334,6 +335,7 @@ const CheckStorageDialog = ({
 
     const newMountPoints = useMemo(() => JSON.parse(window.sessionStorage.getItem("cockpit_mount_points") || "{}"), []);
     const cockpitPassphrases = useMemo(() => JSON.parse(window.sessionStorage.getItem("cockpit_passphrases") || "{}"), []);
+    console.info({ devices });
 
     const useConfiguredStorage = useMemo(() => {
         const availability = checkConfiguredStorage({
@@ -416,7 +418,7 @@ const CheckStorageDialog = ({
         }
 
         if (devicesToUnlock.length === 0) {
-            setCheckStep("prepare-partitioning");
+            setCheckStep("mdraid");
             return;
         }
 
@@ -452,6 +454,7 @@ const CheckStorageDialog = ({
                 applyStorage({
                     onFail: exc => {
                         setCheckStep();
+                        console.error("Failed to apply storage", exc);
                         setError(exc);
                     },
                     onSuccess: () => setCheckStep(),
@@ -459,12 +462,39 @@ const CheckStorageDialog = ({
                 });
             } catch (exc) {
                 setCheckStep();
+                console.error("Failed to prepare partitioning", exc);
                 setError(exc);
             }
         };
 
         applyNewPartitioning();
     }, [devices, checkStep, newMountPoints, selectedDisks, useConfiguredStorage]);
+
+    useEffect(() => {
+        if (checkStep !== "mdraid") {
+            return;
+        }
+
+        const inactiveDevices = (
+            Object.keys(devices)
+                    .filter(device => devices[device].type.v === "mdarray" && devices[device].status.v === false)
+        );
+        console.info({ inactiveDevices });
+
+        if (inactiveDevices.length === 0) {
+            setCheckStep("prepare-partitioning");
+            return;
+        }
+
+        Promise.all(inactiveDevices.map(device => activateDevice({ device })))
+                .catch(exc => {
+                    setCheckStep();
+                    setError(exc);
+                })
+                .then(() => {
+                    dispatch(getDevicesAction());
+                });
+    }, [checkStep, dispatch, devices]);
 
     useEffect(() => {
         if (checkStep !== "rescan" || useConfiguredStorage === undefined) {

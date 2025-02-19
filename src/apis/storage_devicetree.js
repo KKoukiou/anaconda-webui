@@ -153,3 +153,7 @@ export const findExistingSystems = async ({ onFail, onSuccess }) => {
         task: tasks[0],
     });
 };
+
+export const activateDevice = ({ device }) => {
+    return new DeviceTree().callHandler("ActivateDevice", [device]);
+};

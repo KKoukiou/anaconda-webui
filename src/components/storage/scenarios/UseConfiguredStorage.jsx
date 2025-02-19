@@ -38,33 +38,32 @@ export const checkConfiguredStorage = ({
     const currentPartitioningMatches = storageScenarioId === "use-configured-storage";
     availability.hidden = partitioning === undefined || !currentPartitioningMatches;
 
-    availability.available = (
-        newMountPoints === undefined ||
-        (
+    const allDirs = [];
+    const getNestedDirs = (object) => {
+        if (!object) {
+            return;
+        }
+        const { content, dir, subvolumes } = object;
+
+        if (dir) {
+            allDirs.push(dir);
+        }
+        if (content) {
+            getNestedDirs(content);
+        }
+        if (subvolumes) {
+            Object.keys(subvolumes).forEach(sv => getNestedDirs(subvolumes[sv]));
+        }
+    };
+    if (newMountPoints === undefined) {
+        availability.available = true;
+    } else {
+        Object.keys(newMountPoints).forEach(key => getNestedDirs(newMountPoints[key]));
+        availability.available = (
             mountPointConstraints
                     ?.filter(m => m.required.v)
                     .every(m => {
-                        const allDirs = [];
-                        const getNestedDirs = (object) => {
-                            if (!object) {
-                                return;
-                            }
-                            const { content, dir, subvolumes } = object;
-
-                            if (dir) {
-                                allDirs.push(dir);
-                            }
-                            if (content) {
-                                getNestedDirs(content);
-                            }
-                            if (subvolumes) {
-                                Object.keys(subvolumes).forEach(sv => getNestedDirs(subvolumes[sv]));
-                            }
-                        };
-
                         if (m["mount-point"].v) {
-                            Object.keys(newMountPoints).forEach(key => getNestedDirs(newMountPoints[key]));
-
                             return allDirs.includes(m["mount-point"].v);
                         }
 
@@ -76,8 +75,8 @@ export const checkConfiguredStorage = ({
 
                         return false;
                     })
-        )
-    );
+        );
+    }
 
     availability.review = <StorageReview />;
 
