@@ -45,13 +45,13 @@ import { ArrowLeftIcon } from "@patternfly/react-icons";
 
 import {
     runStorageTask,
-    scanDevicesWithTask,
 } from "../../apis/storage.js";
 import {
     setBootloaderDrive,
 } from "../../apis/storage_bootloader.js";
 import {
     activateDevice,
+    findDevices,
     unlockDevice,
 } from "../../apis/storage_devicetree.js";
 import {
@@ -477,7 +477,7 @@ const CheckStorageDialog = ({
 
         const inactiveDevices = (
             Object.keys(devices)
-                    .filter(device => devices[device].type.v === "mdarray" && devices[device].status.v === false)
+                    .filter(device => devices[device].type?.v === "mdarray" && devices[device].status?.v === false)
         );
         console.info({ inactiveDevices });
 
@@ -503,24 +503,20 @@ const CheckStorageDialog = ({
 
         // When the dialog is shown rescan to get latest configured storage
         // and check if we need to prepare manual partitioning
-        scanDevicesWithTask()
-                .then(task => {
-                    return runStorageTask({
-                        onFail: exc => {
-                            setCheckStep();
-                            setError(exc);
-                        },
-                        onSuccess: () => dispatch(getDevicesAction())
-                                .then(() => {
-                                    setCheckStep("luks");
-                                })
-                                .catch(exc => {
-                                    setCheckStep();
-                                    setError(exc);
-                                }),
-                        task
-                    });
-                });
+        findDevices({
+            onFail: exc => {
+                setCheckStep();
+                setError(exc);
+            },
+            onSuccess: () => dispatch(getDevicesAction())
+            .then(() => {
+                setCheckStep("luks");
+            })
+            .catch(exc => {
+                setCheckStep();
+                setError(exc);
+            }),
+        });
     }, [useConfiguredStorage, checkStep, dispatch, setError]);
 
     const goBackToInstallation = () => {

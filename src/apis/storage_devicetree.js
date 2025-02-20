@@ -157,3 +157,16 @@ export const findExistingSystems = async ({ onFail, onSuccess }) => {
 export const activateDevice = ({ device }) => {
     return new DeviceTree().callHandler("ActivateDevice", [device]);
 };
+
+export const findDevices = async ({ onFail, onSuccess }) => {
+    const tasks = await new StorageClient().client.call(
+        OBJECT_PATH,
+        INTERFACE_NAME_HANDLER,
+        "FindDevicesWithTask", []
+    );
+    return runStorageTask({
+        onFail,
+        onSuccess,
+        task: tasks[0],
+    });
+};
