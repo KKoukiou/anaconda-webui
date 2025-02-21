@@ -32,7 +32,7 @@ from language import Language
 from machine_install import VirtInstallMachine
 from progress import Progress
 from storage import Storage
-from testlib import MachineCase  # pylint: disable=import-error
+from testlib import MachineCase, wait  # pylint: disable=import-error
 from users import Users
 from utils import add_public_key
 
@@ -104,6 +104,9 @@ class VirtInstallMachineCase(MachineCase):
         b = self.browser
         s = Storage(b, m)
         s.dbus_scan_devices()
+        # Wait for the disk to be detected before proceeding
+        disks = ["vd" + chr(97 + index) for index in range(len(self.disk_images))]
+        wait(lambda: all(disk in s.dbus_get_usable_disks() for disk in disks), tries=5, delay=5)
 
         self.resetLanguage()
 
