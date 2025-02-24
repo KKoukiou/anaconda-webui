@@ -90,20 +90,17 @@ class VirtInstallMachineCase(MachineCase):
 
         super().setUp()
 
-        # Add installation target disks
-        for disk, size in self.disk_images:
-            backing_file = None if not disk else os.path.join(BOTS_DIR, f"./images/{disk}")
-            self.add_disk(size, backing_file)
-            # Select the disk as boot device
-            subprocess.check_call([
-                "virt-xml", "-c", "qemu:///session",
-                self.machine.label, "--edit", "--boot", "hd"
-            ])
-
         m = self.machine
         b = self.browser
         s = Storage(b, m)
+
+        self.removeAllDisks()
+        s.udevadm_settle()
+        self.addAllDisks()
+        s.udevadm_settle()
+
         s.dbus_scan_devices()
+
         # Wait for the disk to be detected before proceeding
         disks = ["vd" + chr(97 + index) for index in range(len(self.disk_images))]
         wait(lambda: all(disk in s.dbus_get_usable_disks() for disk in disks), tries=5, delay=5)
@@ -121,15 +118,12 @@ class VirtInstallMachineCase(MachineCase):
             self.allow_browser_errors(".*client closed.*")
             self.allow_browser_errors(".*Server has closed the connection.*")
 
-    def add_disk(self, size, backing_file=None):
+    def add_disk(self, size, backing_file=None, target="vda"):
         image = self._create_disk_image(size, backing_file=backing_file)
         subprocess.check_call([
             "virt-xml", "-c",  "qemu:///session", self.machine.label,
-            "--update", "--add-device", "--disk", f"{image},format=qcow2"
+            "--update", "--add-device", "--disk", f"{image},format=qcow2,target={target}"
         ])
-
-        if self.is_nondestructive():
-            self.addCleanup(self.rem_disk, image)
 
         return image
 
@@ -168,12 +162,36 @@ class VirtInstallMachineCase(MachineCase):
         users = Users(b, m)
         users.dbus_clear_users()
 
+    def addAllDisks(self):
+        # Add installation target disks
+        for index, (disk, size) in enumerate(self.disk_images):
+            target = "vd" + chr(97 + index) # vd[a-z]
+            backing_file = None if not disk else os.path.join(BOTS_DIR, f"./images/{disk}")
+            self.add_disk(size, backing_file, target)
+            # Select the disk as boot device
+            subprocess.check_call([
+                "virt-xml", "-c", "qemu:///session",
+                self.machine.label, "--edit", "--boot", "hd"
+            ])
+
+    def removeAllDisks(self):
+        # Remove all disks
+        domblklist = subprocess.getoutput(
+            f"virsh domblklist {self.machine.label}",
+        )
+        for line in domblklist.splitlines():
+            name = line.split()[0]
+            if "vd" in name:
+                file = line.split()[1]
+                self.rem_disk(file)
+
     def resetStorage(self):
         # Ensures that anaconda has the latest storage configuration data
         m = self.machine
         b = self.browser
         s = Storage(b, m)
 
+        self.removeAllDisks()
         s.dbus_reset_partitioning()
         s.dbus_reset_selected_disks()
         # CLEAR_PARTITIONS_DEFAULT = -1
