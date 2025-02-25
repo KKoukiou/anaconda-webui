@@ -47,6 +47,10 @@ class VirtInstallMachineCase(MachineCase):
     MachineCase.machine_class = VirtInstallMachine
     report_file = os.path.join(TEST_DIR, "report.json")
 
+    def partition_disk(self):
+        """ Override this method to partition the disk """
+        pass
+
     @property
     def temp_dir(self):
         """Get temp directory for libvirt resources
@@ -73,6 +77,9 @@ class VirtInstallMachineCase(MachineCase):
         boot_modes = getattr(method, "boot_modes", ["bios"])
         self.disk_images = getattr(method, "disk_images", [("", 15)])
 
+        partition_disk_method_name = "_" + self._testMethodName + "_partition_disk"
+        self.partition_disk = getattr(self, partition_disk_method_name, self.partition_disk)
+
         if self.is_efi and "efi" not in boot_modes:
             self.skipTest("Skipping for EFI boot mode")
         elif not self.is_efi and "bios" not in boot_modes:
@@ -98,6 +105,7 @@ class VirtInstallMachineCase(MachineCase):
         s.udevadm_settle()
         self.addAllDisks()
         s.udevadm_settle()
+        self.partition_disk()
 
         s.dbus_scan_devices()
 
@@ -193,6 +201,8 @@ class VirtInstallMachineCase(MachineCase):
 
         self.removeAllDisks()
         s.dbus_reset_partitioning()
+        # Create an AUTOMATIC partitioning because MANUAL partitioning tests might take the last created
+        s.dbus_create_partitioning("AUTOMATIC")
         s.dbus_reset_selected_disks()
         # CLEAR_PARTITIONS_DEFAULT = -1
         s.dbus_set_initialization_mode(-1)
