@@ -109,10 +109,14 @@ class VirtInstallMachineCase(MachineCase):
         # Wait for minimum /dev/vda to be detected before proceeding
         try:
             wait(lambda: "vda" in m.execute("ls /dev"), tries=5, delay=5)
-        except Error as e:
+        except Error:
             print("vda not detected")
             print(m.execute("lsblk"))
-            raise e
+            self.removeAllDisks()
+            s.udevadm_settle()
+            self.addAllDisks()
+            s.udevadm_settle()
+            wait(lambda: "vda" in m.execute("ls /dev"), tries=5, delay=5)
 
         self.partition_disk()
 
