@@ -185,11 +185,12 @@ class VirtInstallMachineCase(MachineCase):
             target = "vd" + chr(97 + index) # vd[a-z]
             backing_file = None if not disk else os.path.join(BOTS_DIR, f"./images/{disk}")
             self.add_disk(size, backing_file, target)
-            # Select the disk as boot device
-            subprocess.check_call([
-                "virt-xml", "-c", "qemu:///session",
-                self.machine.label, "--edit", "--boot", "hd"
-            ])
+
+        # Select the disk as boot device
+        subprocess.check_call([
+            "virt-xml", "-c", "qemu:///session",
+            self.machine.label, "--edit", "--boot", "hd"
+        ])
 
     def removeAllDisks(self):
         # Remove all disks
