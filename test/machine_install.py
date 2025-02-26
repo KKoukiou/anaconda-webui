@@ -163,6 +163,7 @@ class VirtInstallMachine(VirtMachine):
                 "-device virtio-net-pci,netdev=hostnet0,id=net0,addr=0x16' "
                 f"--extra-args '{extra_args}' "
                 f"--disk=none "
+                "--controller type=scsi,model=virtio-scsi "
                 f"--location {location} &"
             )
 

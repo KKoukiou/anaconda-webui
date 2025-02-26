@@ -35,7 +35,7 @@ class TestStorageHomeReuse_E2E(VirtInstallMachineCase):
         # as /var/ is not default mount point in Fedora which results in
         # the 'Reinstall Fedora' option to get hidden
         self.machine.execute("""
-            mount /dev/vda4 /mnt;
+            mount /dev/sda4 /mnt;
             btrfs subvolume delete /mnt/var/lib/machines;
             btrfs subvolume delete /mnt/var;
             umount /mnt
@@ -71,7 +71,7 @@ class TestStorageHomeReuse_E2E(VirtInstallMachineCase):
 
     def _testBasic_partition_disk(self):
         m = self.machine
-        disk = "/dev/vda"
+        disk = "/dev/sda"
 
         old_root_file = "old_root_file"
         old_home_file = "old_home_file"

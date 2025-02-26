@@ -106,24 +106,24 @@ class VirtInstallMachineCase(MachineCase):
         self.addAllDisks()
         s.udevadm_settle()
 
-        # Wait for minimum /dev/vda to be detected before proceeding
+        # Wait for minimum /dev/sda to be detected before proceeding
         try:
-            wait(lambda: "vda" in m.execute("ls /dev"), tries=5, delay=5)
+            wait(lambda: "sda" in m.execute("ls /dev"), tries=5, delay=5)
         except Error:
-            print("vda not detected")
+            print("sda not detected")
             print(m.execute("lsblk"))
             self.removeAllDisks()
             s.udevadm_settle()
             self.addAllDisks()
             s.udevadm_settle()
-            wait(lambda: "vda" in m.execute("ls /dev"), tries=5, delay=5)
+            wait(lambda: "sda" in m.execute("ls /dev"), tries=5, delay=5)
 
         self.partition_disk()
 
         s.dbus_scan_devices()
 
         # Set the first disk as the installation target
-        s.dbus_set_selected_disk("vda")
+        s.dbus_set_selected_disk("sda")
 
         self.resetLanguage()
 
@@ -135,11 +135,11 @@ class VirtInstallMachineCase(MachineCase):
             self.allow_browser_errors(".*client closed.*")
             self.allow_browser_errors(".*Server has closed the connection.*")
 
-    def add_disk(self, size, backing_file=None, target="vda"):
+    def add_disk(self, size, backing_file=None):
         image = self._create_disk_image(size, backing_file=backing_file)
         subprocess.check_call([
             "virt-xml", "-c",  "qemu:///session", self.machine.label,
-            "--update", "--add-device", "--disk", f"{image},format=qcow2,target={target}"
+            "--update", "--add-device", "--disk", f"{image},format=qcow2,bus=scsi"
         ])
 
         return image
@@ -181,10 +181,9 @@ class VirtInstallMachineCase(MachineCase):
 
     def addAllDisks(self):
         # Add installation target disks
-        for index, (disk, size) in enumerate(self.disk_images):
-            target = "vd" + chr(97 + index) # vd[a-z]
+        for (disk, size) in self.disk_images:
             backing_file = None if not disk else os.path.join(BOTS_DIR, f"./images/{disk}")
-            self.add_disk(size, backing_file, target)
+            self.add_disk(size, backing_file)
 
         # Select the disk as boot device
         subprocess.check_call([
@@ -199,7 +198,13 @@ class VirtInstallMachineCase(MachineCase):
         )
         for line in domblklist.splitlines():
             name = line.split()[0]
-            if "vd" in name:
+            path = line.split()[-1]
+
+            if "-boot" in path:
+                # Not removing cdrom device
+                continue
+
+            if "sd" in name:
                 file = line.split()[1]
                 self.rem_disk(file)
 
@@ -287,7 +292,7 @@ class VirtInstallMachineCase(MachineCase):
         if self.is_efi:
             # Add efibootmgr entry for the second OS
             distro_name = self.disk_images[0][0].split("-")[0]
-            m.execute(f"efibootmgr -c -d /dev/vda -p 15 -L {distro_name} -l '/EFI/{distro_name}/shimx64.efi'")
+            m.execute(f"efibootmgr -c -d /dev/sda -p 15 -L {distro_name} -l '/EFI/{distro_name}/shimx64.efi'")
             # Select the Fedora grub entry for first boot
             m.execute("efibootmgr -n 0001")
 

@@ -36,8 +36,8 @@ class TestStorageEraseAll_Fedora(VirtInstallMachineCase):
         i.open()
         i.reach(i.steps.REVIEW)
 
-        for device in ["vda1", "vda2", "vda3", "vda4"]:
-            r.check_disk_row("vda", parent=device, action="delete")
+        for device in ["sda1", "sda2", "sda3", "sda4"]:
+            r.check_disk_row("sda", parent=device, action="delete")
 
         r.check_deleted_system("Fedora Linux")
 
@@ -59,8 +59,8 @@ class TestStorageEraseAll_Windows(VirtInstallMachineCase):
         i.open()
         i.reach(i.steps.REVIEW)
 
-        for device in ["vda1", "vda2", "vda3", "vda4"]:
-            r.check_disk_row("vda", parent=device, action="delete")
+        for device in ["sda1", "sda2", "sda3", "sda4"]:
+            r.check_disk_row("sda", parent=device, action="delete")
 
         r.check_all_erased_checkbox_label()
         r.check_deleted_system("Windows")

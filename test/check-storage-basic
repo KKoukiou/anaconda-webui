@@ -39,7 +39,7 @@ class TestStorage(VirtInstallMachineCase):
         i.reach(i.steps.INSTALLATION_METHOD)
 
         # Check the auto-selected disk's details
-        s.check_disk_selected("vda", selected=True, size="16.1 GB")
+        s.check_disk_selected("sda", selected=True, size="16.1 GB")
 
         # Pixel test the storage step
         b.assert_pixels(
@@ -52,29 +52,29 @@ class TestStorage(VirtInstallMachineCase):
         # However, since the storage module initialization is long completed
         # the newly added disk, will not be visible in the UI,
         # until the test clicks on the re-scan button
-        dev = "vdb"
-        self.add_disk(2, target=dev)
-        s.rescan_disks(["vda", dev])
+        dev = "sdb"
+        self.add_disk(2)
+        s.rescan_disks(["sda", dev])
 
         # Check that the disk selection persists when moving next and back
-        s.check_disk_selected("vda", True)
+        s.check_disk_selected("sda", True)
         s.check_disk_selected(dev, False)
         i.next()
         i.back()
-        s.check_disk_selected("vda", True)
+        s.check_disk_selected("sda", True)
         s.check_disk_selected(dev, False)
 
         # Try unselecting the single disk and expect and error
-        s.select_disks([("vda", False), (dev, False)])
+        s.select_disks([("sda", False), (dev, False)])
         s.wait_no_disks()
         # Check the next button is disabled if no disks are selected
         i.check_next_disabled()
 
         # Check that disk selection is kept on Next and Back
-        s.select_disks([(dev, True), ("vda", True)])
+        s.select_disks([(dev, True), ("sda", True)])
         i.next()
         i.back()
-        for disk in ["vda", dev]:
+        for disk in ["sda", dev]:
             s.check_disk_selected(disk)
 
     def testScenarioSelection(self):
@@ -190,12 +190,12 @@ class TestMultipleDisks(VirtInstallMachineCase):
         m = self.machine
         s = Storage(b, m)
 
-        s.partition_disk("/dev/vda", [("10GB", "lvmpv")])
-        s.partition_disk("/dev/vdb", [("10GB", "lvmpv")])
+        s.partition_disk("/dev/sda", [("10GB", "lvmpv")])
+        s.partition_disk("/dev/sdb", [("10GB", "lvmpv")])
 
         # Create VG on LUKS with the two available disks
         m.execute("""
-        vgcreate -y vg /dev/vda1 /dev/vdb1
+        vgcreate -y vg /dev/sda1 /dev/sdb1
         lvcreate -y -n lv -l 100%FREE vg
         mkfs.ext4 -F /dev/vg/lv
         vgchange -a n vg
@@ -216,7 +216,7 @@ class TestMultipleDisks(VirtInstallMachineCase):
         i.next(should_fail=True)
         b.wait_in_text(
             "#anaconda-screen-storage-configuration-step-notification",
-            "Selected disks vda contain volume group 'vg' that also uses further unselected disks"
+            "Selected disks sda contain volume group 'vg' that also uses further unselected disks"
         )
 
 

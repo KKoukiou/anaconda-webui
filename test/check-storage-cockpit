@@ -38,7 +38,7 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
 
         i.open()
         i.next()
-        s.check_disk_selected("vda")
+        s.check_disk_selected("sda")
         s.modify_storage()
         s.confirm_entering_cockpit_storage()
 
@@ -50,12 +50,12 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         s = Storage(b, m)
         r = Review(b, m)
 
-        dev = "vda"
+        dev = "sda"
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
         s.wait_scenario_visible("use-configured-storage", False)
-        s.check_disk_selected("vda")
+        s.check_disk_selected("sda")
         s.modify_storage()
         s.confirm_entering_cockpit_storage()
         b.wait_visible(".cockpit-storage-integration-sidebar")
@@ -99,7 +99,7 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
 
         i.reach(i.steps.REVIEW)
 
-        r.check_disk_row(dev, "/", "vda3", "15.0 GB", False, None, True)
+        r.check_disk_row(dev, "/", "sda3", "15.0 GB", False, None, True)
 
     @nondestructive
     def testLVM(self):
@@ -110,12 +110,12 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         r = Review(b, m)
 
         vgname = "fedoravg"
-        dev = "vda"
+        dev = "sda"
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
         s.wait_scenario_visible("use-configured-storage", False)
-        s.check_disk_selected("vda")
+        s.check_disk_selected("sda")
         s.modify_storage()
         s.confirm_entering_cockpit_storage()
         b.wait_visible(".cockpit-storage-integration-sidebar")
@@ -165,13 +165,13 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         b.switch_to_top()
 
         def checkStorageReview(prefix=""):
-            disk = "vda"
+            disk = "sda"
             with b.wait_timeout(30):
-                r.check_disk(disk, "16.1 GB vda (Virtio Block Device)")
-            r.check_disk_row(disk, "/boot", "vda2", "1.07 GB", False, prefix=prefix)
-            r.check_disk_row(disk, "/", "vda3, LVM", "6.01 GB", False, prefix=prefix)
-            r.check_disk_row(disk, "/home", "vda3, LVM", "8.12 GB", False, prefix=prefix)
-            r.check_disk_row(disk, "swap", "vda3, LVM", "898 MB", False, prefix=prefix)
+                r.check_disk(disk, "16.1 GB sda (QEMU QEMU HARDDISK)")
+            r.check_disk_row(disk, "/boot", "sda2", "1.07 GB", False, prefix=prefix)
+            r.check_disk_row(disk, "/", "sda3, LVM", "6.01 GB", False, prefix=prefix)
+            r.check_disk_row(disk, "/home", "sda3, LVM", "8.12 GB", False, prefix=prefix)
+            r.check_disk_row(disk, "swap", "sda3, LVM", "898 MB", False, prefix=prefix)
 
         s.return_to_installation()
 
@@ -203,7 +203,7 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
         s.wait_scenario_visible("use-configured-storage", False)
-        s.check_disk_selected("vda")
+        s.check_disk_selected("sda")
         s.modify_storage()
         s.confirm_entering_cockpit_storage()
 
@@ -232,12 +232,12 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         i.reach(i.steps.REVIEW)
 
         # verify review screen
-        dev = "vda"
-        r.check_disk(dev, "16.1 GB vda (Virtio Block Device)")
+        dev = "sda"
+        r.check_disk(dev, "16.1 GB sda (QEMU QEMU HARDDISK)")
 
-        r.check_disk_row(dev, "/boot/efi", "vda1", "99.6 MB", False)
-        r.check_disk_row(dev, "/boot", "vda2", "1.07 GB", False)
-        r.check_disk_row(dev, "/", "vda3", "14.9 GB", False, None, False, 4)
+        r.check_disk_row(dev, "/boot/efi", "sda1", "99.6 MB", False)
+        r.check_disk_row(dev, "/boot", "sda2", "1.07 GB", False)
+        r.check_disk_row(dev, "/", "sda3", "14.9 GB", False, None, False, 4)
 
         # Check fstab
         fstab = m.execute("cat /etc/fstab")
@@ -258,7 +258,7 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
         s.wait_scenario_visible("use-configured-storage", False)
-        s.check_disk_selected("vda")
+        s.check_disk_selected("sda")
         s.modify_storage()
         s.confirm_entering_cockpit_storage()
         b.wait_visible(".cockpit-storage-integration-sidebar")
@@ -305,12 +305,12 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         i.reach(i.steps.REVIEW)
 
         # verify review screen
-        dev = "vda"
-        r.check_disk(dev, "16.1 GB vda (Virtio Block Device)")
+        dev = "sda"
+        r.check_disk(dev, "16.1 GB sda (QEMU QEMU HARDDISK)")
 
-        r.check_disk_row(dev, "/boot", "vda2", "1.07 GB", False)
-        r.check_disk_row(dev, "/", "vda3", "15.0 GB", False, None, False, 3)
-        r.check_disk_row(dev, "/home", "vda3", "15.0 GB", False)
+        r.check_disk_row(dev, "/boot", "sda2", "1.07 GB", False)
+        r.check_disk_row(dev, "/", "sda3", "15.0 GB", False, None, False, 3)
+        r.check_disk_row(dev, "/home", "sda3", "15.0 GB", False)
 
         # Check fstab
         fstab = m.execute("cat /etc/fstab")
@@ -332,7 +332,7 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
         s.wait_scenario_visible("use-configured-storage", False)
-        s.check_disk_selected("vda")
+        s.check_disk_selected("sda")
         s.modify_storage()
         s.confirm_entering_cockpit_storage()
         b.wait_visible(".cockpit-storage-integration-sidebar")
@@ -379,7 +379,7 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         i.next(next_page=i.steps.CUSTOM_MOUNT_POINT)
 
         s.check_mountpoint_row(1, "/", "root", True, "btrfs")
-        s.check_mountpoint_row(2, "/boot", "vda2", False, "ext4")
+        s.check_mountpoint_row(2, "/boot", "sda2", False, "ext4")
         s.check_mountpoint_row(3, "/home", "home", False, "btrfs")
 
         s.select_mountpoint_row_reformat(1)
@@ -388,18 +388,18 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
 
         # Root should be preselected to reformat
         s.check_mountpoint_row(1, "/", "root", True, "btrfs")
-        s.check_mountpoint_row(2, "/boot", "vda2", True, "ext4")
+        s.check_mountpoint_row(2, "/boot", "sda2", True, "ext4")
         s.check_mountpoint_row(3, "/home", "home", False, "btrfs")
 
         i.reach(i.steps.REVIEW)
 
         # verify review screen
-        dev = "vda"
-        r.check_disk(dev, "16.1 GB vda (Virtio Block Device)")
+        dev = "sda"
+        r.check_disk(dev, "16.1 GB sda (QEMU QEMU HARDDISK)")
 
-        r.check_disk_row(dev, "/boot", "vda2", "1.07 GB", True, "ext4")
-        r.check_disk_row(dev, "/", "vda3", "15.0 GB", True, "btrfs")
-        r.check_disk_row(dev, "/home", "vda3", "15.0 GB", False)
+        r.check_disk_row(dev, "/boot", "sda2", "1.07 GB", True, "ext4")
+        r.check_disk_row(dev, "/", "sda3", "15.0 GB", True, "btrfs")
+        r.check_disk_row(dev, "/home", "sda3", "15.0 GB", False)
 
         # Check fstab
         fstab = m.execute("cat /etc/fstab")

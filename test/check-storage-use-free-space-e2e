@@ -43,7 +43,7 @@ class TestUseFreeSpace_E2E(DualBootHelper_E2E, VirtInstallMachineCase):
         r.check_checkbox_not_present()
 
         self.install(needs_confirmation=False)
-        root_one_size_bytes = m.execute("blockdev --getsize64 /dev/vda3")
+        root_one_size_bytes = m.execute("blockdev --getsize64 /dev/sda3")
         root_one_size = round(int(root_one_size_bytes) / 1024 / 1024 / 1024, 1)
         if int(root_one_size) == float(root_one_size):
             root_one_size = int(root_one_size)

@@ -40,12 +40,12 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         i = Installer(b, m)
         s = Storage(b, m)
         r = Review(b, m)
-        dev = "vdb"
+        dev = "sdb"
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
 
-        s.select_mountpoint([("vda", False), ("vdb", True)])
+        s.select_mountpoint([("sda", False), ("sdb", True)])
 
         # verify gathered requests
         # root partition is not auto-mapped
@@ -91,25 +91,25 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         i.reach(i.steps.REVIEW)
 
         # verify review screen
-        r.check_disk(dev, "16.1 GB vdb (Virtio Block Device)")
+        r.check_disk(dev, "16.1 GB sdb (QEMU QEMU HARDDISK)")
 
         next_idx = 2
         if self.is_efi:
-            r.check_disk_row(dev, "/boot/efi", f"vdb{next_idx}", "105 MB", True, "efi")
+            r.check_disk_row(dev, "/boot/efi", f"sdb{next_idx}", "105 MB", True, "efi")
         next_idx += 1
-        r.check_disk_row(dev, "/boot", f"vdb{next_idx}", "1.05 GB", True, "ext4")
-        r.check_disk_row(dev, "/", f"vdb{next_idx + 1}", "12.8 GB", True, "btrfs subvolume")
-        r.check_disk_row(dev, "/home", f"vdb{next_idx + 1}", "12.8 GB", False)
+        r.check_disk_row(dev, "/boot", f"sdb{next_idx}", "1.05 GB", True, "ext4")
+        r.check_disk_row(dev, "/", f"sdb{next_idx + 1}", "12.8 GB", True, "btrfs subvolume")
+        r.check_disk_row(dev, "/home", f"sdb{next_idx + 1}", "12.8 GB", False)
 
         applied_partitioning = s.dbus_get_applied_partitioning()
 
         # When adding a new partition a new partitioning should be created
         i.reach_on_sidebar(i.steps.INSTALLATION_METHOD)
 
-        disk = "/dev/vdb"
+        disk = "/dev/sdb"
         m.execute(f"sgdisk --new=0:0:0 {disk}")
         s.rescan_disks()
-        s.select_mountpoint([("vda", False), ("vdb", True)])
+        s.select_mountpoint([("sda", False), ("sdb", True)])
         s.select_mountpoint_row_device(1, "root")
         select_boot_mountpoints()
 
@@ -128,7 +128,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
 
         m.execute(f"mkswap {disk}5")
         s.rescan_disks()
-        s.select_mountpoint([("vda", False), ("vdb", True)])
+        s.select_mountpoint([("sda", False), ("sdb", True)])
         s.check_mountpoint_row_device_available(1, f"{dev}5", True, True)
 
     def _testNoRootMountPoint_partition_disk(self):
@@ -137,7 +137,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         s = Storage(b, m)
 
         # BIOS boot /boot on ext4 / on xfs /home on btrfs
-        disk = "/dev/vda"
+        disk = "/dev/sda"
         s.partition_disk(disk, [("1MiB", "biosboot"), ("1GB", "ext4"), ("10GiB", "xfs"), ("", "ext4")])
 
     def testNoRootMountPoint(self):
@@ -149,7 +149,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
 
-        dev = "vda"
+        dev = "sda"
         s.select_mountpoint([(dev, True)])
 
         # verify gathered requests
@@ -177,11 +177,11 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         s = Storage(b, m)
 
         # BIOS boot partition, /boot partition, /
-        disk1 = "/dev/vda"
+        disk1 = "/dev/sda"
         s.partition_disk(disk1, [("1MiB", "biosboot"), ("1GB", "xfs"), ("", "xfs")])
 
-        # /dev/vdb1 /home partition
-        disk2 = "/dev/vdb"
+        # /dev/sdb1 /home partition
+        disk2 = "/dev/sdb"
         s.partition_disk(disk2, [("", "xfs")])
 
     @disk_images([("", 15), ("", 10)])
@@ -192,30 +192,30 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         s = Storage(b, m)
         r = Review(b, m)
 
-        dev1 = "vda"
-        dev2 = "vdb"
+        dev1 = "sda"
+        dev2 = "sdb"
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
 
-        # Select only vdb disk and verify that mount point assignment is
+        # Select only sdb disk and verify that mount point assignment is
         # not available (missing biosboot)
         s.select_disks([(dev1, False), (dev2, True)])
         s.wait_scenario_available("mount-point-mapping", False)
 
-        # Select only vda disk and verify that the partitioning request is correct
+        # Select only sda disk and verify that the partitioning request is correct
         s.select_mountpoint([(dev1, True), (dev2, False)])
 
-        s.check_mountpoint_row_device_available(1, "vdb1", False)
-        s.check_mountpoint_row_device_available(1, "vda2")
+        s.check_mountpoint_row_device_available(1, "sdb1", False)
+        s.check_mountpoint_row_device_available(1, "sda2")
 
         # Go back and change the disk selection. The partitioning should be re-created
         i.back()
 
         s.select_mountpoint([(dev1, True), (dev2, True)])
 
-        s.check_mountpoint_row_device_available(1, "vda2", True)
-        s.check_mountpoint_row_device_available(1, "vdb1")
+        s.check_mountpoint_row_device_available(1, "sda2", True)
+        s.check_mountpoint_row_device_available(1, "sdb1")
 
         s.select_mountpoint_row_device(1, f"{dev1}3")
         s.check_mountpoint_row(1, "/", f"{dev1}3", True, "xfs")
@@ -231,14 +231,14 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         i.reach(i.steps.REVIEW)
 
         # verify review screen
-        disk = "vda"
-        r.check_disk(disk, "16.1 GB vda (Virtio Block Device)")
-        r.check_disk_row(disk, "/boot", "vda2", "1.07 GB", False)
-        r.check_disk_row(disk, "/", "vda3", "15.0 GB", True, "xfs")
+        disk = "sda"
+        r.check_disk(disk, "16.1 GB sda (QEMU QEMU HARDDISK)")
+        r.check_disk_row(disk, "/boot", "sda2", "1.07 GB", False)
+        r.check_disk_row(disk, "/", "sda3", "15.0 GB", True, "xfs")
 
-        disk = "vdb"
-        r.check_disk(disk, "10.7 GB vdb (Virtio Block Device)")
-        r.check_disk_row(disk, "/home", "vdb1", "10.7 GB", False)
+        disk = "sdb"
+        r.check_disk(disk, "10.7 GB sdb (QEMU QEMU HARDDISK)")
+        r.check_disk_row(disk, "/home", "sdb1", "10.7 GB", False)
 
         b.assert_pixels(
             "#app",
@@ -251,7 +251,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         m = self.machine
         s = Storage(b, m)
 
-        disk1 = "/dev/vda"
+        disk1 = "/dev/sda"
         s.partition_disk(
             disk1,
             [("1MiB", "biosboot"), ("1GB", "xfs"), ("1GB", "xfs"), ("1GB", "xfs"), ("", "xfs")]
@@ -276,23 +276,23 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         m = self.machine
         i = Installer(b, m)
         s = Storage(b, m)
-        dev1 = "vda"
+        dev1 = "sda"
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
 
         s.unlock_all_encrypted()
-        s.unlock_device("1234", ["vda2", "vda3", "vda4"], [])
+        s.unlock_device("1234", ["sda2", "sda3", "sda4"], [])
         b.click("#unlock-device-dialog-close-btn")
 
         s.unlock_all_encrypted()
-        s.unlock_device("einszwei", ["vda2", "vda3", "vda4"], ["vda2"])
+        s.unlock_device("einszwei", ["sda2", "sda3", "sda4"], ["sda2"])
 
         # The 'Unlock' dialog should stay open unless all LUKS devices are unlocked
-        s.unlock_device("einszweidrei", ["vda3", "vda4"], ["vda3"])
+        s.unlock_device("einszweidrei", ["sda3", "sda4"], ["sda3"])
 
         # The 'Unlock' dialog closes when all LUKS devices are unlocked
-        s.unlock_device("einszweidreivier", ["vda4"], ["vda4"])
+        s.unlock_device("einszweidreivier", ["sda4"], ["sda4"])
 
         s.select_mountpoint([(dev1, True)])
         b.wait_not_present(f"#{i.steps.CUSTOM_MOUNT_POINT}-table tbody tr:nth-child(4) td[data-label='Format type'] #unlock-luks-btn")
@@ -300,14 +300,14 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         self._testEncryptedUnlock(b, m)
 
     def _testEncryptedUnlock(self, b, m):
-        dev1 = "vda"
+        dev1 = "sda"
 
         i = Installer(b, m)
         s = Storage(b, m)
         r = Review(b, m)
 
         s.check_mountpoint_row_mountpoint(2, "/boot")
-        s.select_mountpoint_row_device(2, "vda5")
+        s.select_mountpoint_row_device(2, "sda5")
 
         s.check_mountpoint_row_mountpoint(1, "/")
         selector = f"#{i.steps.CUSTOM_MOUNT_POINT}-table-row-1 .pf-v5-c-select__toggle"
@@ -319,7 +319,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
 
         i.reach(i.steps.REVIEW)
 
-        r.check_disk_row(dev1, "/", "vda3", "", True, "xfs", True)
+        r.check_disk_row(dev1, "/", "sda3", "", True, "xfs", True)
 
     def testEncryptedUnlockCockpit(self):
         b = self.browser
@@ -330,7 +330,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
-        s.check_disk_selected("vda")
+        s.check_disk_selected("sda")
 
         s.modify_storage()
         s.confirm_entering_cockpit_storage()
@@ -386,7 +386,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         s.return_to_installation_confirm()
         i.wait_current_page(i.steps.INSTALLATION_METHOD)
 
-        s.select_mountpoint([("vda", True)])
+        s.select_mountpoint([("sda", True)])
 
         self._testEncryptedUnlock(b, m)
 
@@ -395,7 +395,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         m = self.machine
         s = Storage(b, m)
 
-        disk = "/dev/vda"
+        disk = "/dev/sda"
         btrfsname = "home"
         s.partition_disk(
             disk,
@@ -423,10 +423,10 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
 
-        s.select_mountpoint([("vda", True)])
+        s.select_mountpoint([("sda", True)])
 
         s.select_mountpoint_row_device(1, "root")
-        s.select_mountpoint_row_device(2, "vda2")
+        s.select_mountpoint_row_device(2, "sda2")
         s.add_mountpoint_row()
         s.select_mountpoint_row_mountpoint(3, "/home/joe")
         s.select_mountpoint_row_device(3, "home", device_id=btrfs_volume_ids[0])
@@ -437,20 +437,20 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         i.reach(i.steps.REVIEW)
 
         # verify review screen
-        disk = "vda"
-        r.check_disk(disk, "16.1 GB vda (Virtio Block Device)")
+        disk = "sda"
+        r.check_disk(disk, "16.1 GB sda (QEMU QEMU HARDDISK)")
 
-        r.check_disk_row(disk, "/boot", "vda2", "1.07 GB", False)
-        r.check_disk_row(disk, "/", "vda3", "5.37 GB", True, "btrfs")
-        r.check_disk_row(disk, "/home/joe", "vda4", "5.37 GB", False, "btrfs")
-        r.check_disk_row(disk, "/home/alan", "vda5", "4.29 GB", False, "btrfs")
+        r.check_disk_row(disk, "/boot", "sda2", "1.07 GB", False)
+        r.check_disk_row(disk, "/", "sda3", "5.37 GB", True, "btrfs")
+        r.check_disk_row(disk, "/home/joe", "sda4", "5.37 GB", False, "btrfs")
+        r.check_disk_row(disk, "/home/alan", "sda5", "4.29 GB", False, "btrfs")
 
     def _testUnusableFormats_partition_disk(self):
         b = self.browser
         m = self.machine
         s = Storage(b, m)
 
-        disk = "/dev/vda"
+        disk = "/dev/sda"
         s.partition_disk(disk, [("1MiB", "biosboot"), ("1GB", "ext4"), ("1GB", None), ("1GB", "lvmpv")])
 
     def testUnusableFormats(self):
@@ -459,7 +459,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         i = Installer(b, m)
         s = Storage(b, m)
 
-        dev = "vda"
+        dev = "sda"
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)

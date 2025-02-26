@@ -30,7 +30,7 @@ class TestStorageMountPointsRAID(VirtInstallMachineCase):
         s = Storage(b, m)
 
         # BIOS boot partition, /boot partition, / on RAID
-        disk = "/dev/vda"
+        disk = "/dev/sda"
         s.partition_disk(disk, [("1MiB", "biosboot"), ("1GB", "xfs"), ("5GB", None), ("5GB", None)])
         m.execute(f"""
         echo einszweidrei | cryptsetup luksFormat {disk}3
@@ -48,14 +48,14 @@ class TestStorageMountPointsRAID(VirtInstallMachineCase):
         i = Installer(b, m)
         s = Storage(b, m)
         r = Review(b, m)
-        dev = "vda"
+        dev = "sda"
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
 
-        # select only vda and check that we don't try to unlock the LUKS partition on vdb
+        # select only sda and check that we don't try to unlock the LUKS partition on sdb
         s.unlock_all_encrypted()
-        s.unlock_device("einszweidrei", ["vda3", "vda4"], ["vda3", "vda4"])
+        s.unlock_device("einszweidrei", ["sda3", "sda4"], ["sda3", "sda4"])
         b.wait_not_present(f"#{i.steps.CUSTOM_MOUNT_POINT}-table tbody tr:nth-child(4) td[data-label='Format type'] #unlock-luks-btn")
 
         s.select_mountpoint([(dev, True)])
@@ -70,17 +70,17 @@ class TestStorageMountPointsRAID(VirtInstallMachineCase):
 
         i.reach(i.steps.REVIEW)
 
-        r.check_disk(dev, "16.1 GB vda (Virtio Block Device)")
+        r.check_disk(dev, "16.1 GB sda (QEMU QEMU HARDDISK)")
 
-        r.check_disk_row(dev, "/boot", "vda2", "1.07 GB", True, "xfs")
-        r.check_disk_row(dev, "/", "vda3, vda4, RAID", "5.35 GB", True, "xfs", True)
+        r.check_disk_row(dev, "/boot", "sda2", "1.07 GB", True, "xfs")
+        r.check_disk_row(dev, "/", "sda3, sda4, RAID", "5.35 GB", True, "xfs", True)
 
     def _testEncryptedUnlockLUKSonRAID_partition_disk(self):
         b = self.browser
         m = self.machine
         s = Storage(b, m)
 
-        disk = "/dev/vda"
+        disk = "/dev/sda"
 
         s.partition_disk(disk, [("1MiB", "biosboot"), ("1GB", "xfs"), ("5GB", None), ("5GB", None)])
         m.execute(f"""
@@ -100,12 +100,12 @@ class TestStorageMountPointsRAID(VirtInstallMachineCase):
         r = Review(b, m)
 
         # BIOS boot partition, /boot partition, / on RAID
-        dev = "vda"
+        dev = "sda"
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
 
-        # select only vda and check that we don't try to unlock the LUKS partition on vdb
+        # select only sda and check that we don't try to unlock the LUKS partition on sdb
         s.unlock_all_encrypted()
         s.unlock_device("einszweidrei", ["encryptedraid"], ["encryptedraid"])
         b.wait_not_present(f"#{i.steps.CUSTOM_MOUNT_POINT}-table tbody tr:nth-child(4) td[data-label='Format type'] #unlock-luks-btn")
@@ -127,8 +127,8 @@ class TestStorageMountPointsRAID(VirtInstallMachineCase):
 
         i.reach(i.steps.REVIEW)
 
-        r.check_disk(dev, "16.1 GB vda (Virtio Block Device)")
-        r.check_disk_row(dev, "/", "vda3, vda4, RAID", "5.35 GB",  True, "xfs", True)
+        r.check_disk(dev, "16.1 GB sda (QEMU QEMU HARDDISK)")
+        r.check_disk_row(dev, "/", "sda3, sda4, RAID", "5.35 GB",  True, "xfs", True)
 
 
 if __name__ == '__main__':

@@ -29,7 +29,7 @@ class TestStorageMountPointsLVM(VirtInstallMachineCase):
         b = self.browser
         s = Storage(b, m)
 
-        disk = "/dev/vda"
+        disk = "/dev/sda"
         vgname = "fedoravg"
 
         s.partition_disk(disk, [("1MiB", "biosboot"), ("1GB", "ext4"), ("", None)])
@@ -51,7 +51,7 @@ class TestStorageMountPointsLVM(VirtInstallMachineCase):
         r = Review(b, m)
 
         vgname = "fedoravg"
-        dev = "vda"
+        dev = "sda"
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
 
@@ -84,13 +84,13 @@ class TestStorageMountPointsLVM(VirtInstallMachineCase):
         i.reach(i.steps.REVIEW)
 
         # verify review screen
-        disk = "vda"
-        r.check_disk(disk, "16.1 GB vda (Virtio Block Device)")
+        disk = "sda"
+        r.check_disk(disk, "16.1 GB sda (QEMU QEMU HARDDISK)")
 
-        r.check_disk_row(disk, "/boot", "vda2", "1.07 GB", True, "ext4")
-        r.check_disk_row(disk, "/", "vda3, LVM", "6.01 GB", True, "ext4")
-        r.check_disk_row(disk, "/home", "vda3, LVM", "8.12 GB", False)
-        r.check_disk_row(disk, "swap", "vda3, LVM", "902 MB", False)
+        r.check_disk_row(disk, "/boot", "sda2", "1.07 GB", True, "ext4")
+        r.check_disk_row(disk, "/", "sda3, LVM", "6.01 GB", True, "ext4")
+        r.check_disk_row(disk, "/home", "sda3, LVM", "8.12 GB", False)
+        r.check_disk_row(disk, "swap", "sda3, LVM", "902 MB", False)
 
         i.reach_on_sidebar(i.steps.CUSTOM_MOUNT_POINT)
 
@@ -103,12 +103,12 @@ class TestStorageMountPointsLVM(VirtInstallMachineCase):
         i.reach(i.steps.REVIEW)
 
         # verify review screen
-        disk = "vda"
-        r.check_disk(disk, "16.1 GB vda (Virtio Block Device)")
+        disk = "sda"
+        r.check_disk(disk, "16.1 GB sda (QEMU QEMU HARDDISK)")
 
-        r.check_disk_row(disk, "/boot", "vda2", "1.07 GB", False)
-        r.check_disk_row(disk, "/", "vda3, LVM", "6.01 GB", True, "ext4")
-        r.check_disk_row(disk, "swap", "vda3, LVM", "902 MB", False)
+        r.check_disk_row(disk, "/boot", "sda2", "1.07 GB", False)
+        r.check_disk_row(disk, "/", "sda3, LVM", "6.01 GB", True, "ext4")
+        r.check_disk_row(disk, "swap", "sda3, LVM", "902 MB", False)
 
 
 if __name__ == '__main__':

@@ -183,7 +183,7 @@ class TestBasic(VirtInstallMachineCase):
         s = Storage(b, m)
 
         # BIOS boot /boot on ext4 / on xfs /home on btrfs
-        disk = "/dev/vda"
+        disk = "/dev/sda"
         s.partition_disk(disk, [("1MiB", "biosboot"), ("1GB", "ext4"), ("10GiB", "xfs"), ("", "ext4")])
 
         # Two partitions on the same disk with the same UUID raise exception in

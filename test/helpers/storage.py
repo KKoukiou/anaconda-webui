@@ -197,7 +197,7 @@ class StorageUtils(StorageDestination):
         ''')
         self.machine.execute('chroot /mnt/sysroot bash /root/add_keyfile.sh')
 
-    def add_basic_partitioning(self, target="vda", size="1GiB"):
+    def add_basic_partitioning(self, target="sda", size="1GiB"):
         # Add a partition for "Use free space" scenario to be present
         self.machine.execute(f"sgdisk --new=0:0:+{size} /dev/{target}")
         self.rescan_disks()

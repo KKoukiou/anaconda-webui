@@ -29,7 +29,7 @@ class TestStorageMountPointsBtrfs (VirtInstallMachineCase):
         m = self.machine
         s = Storage(b, m)
 
-        disk = "/dev/vda"
+        disk = "/dev/sda"
         tmp_mount = "/tmp/btrfs-mount-test"
         s.partition_disk(disk, [("1MiB", "biosboot"), ("1GB", "ext4"), ("", "btrfs")])
         m.execute(f"""
@@ -51,8 +51,8 @@ class TestStorageMountPointsBtrfs (VirtInstallMachineCase):
         s = Storage(b, m)
         r = Review(b, m)
 
-        disk = "/dev/vda"
-        dev = "vda"
+        disk = "/dev/sda"
+        dev = "sda"
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
@@ -85,11 +85,11 @@ class TestStorageMountPointsBtrfs (VirtInstallMachineCase):
         i.reach(i.steps.REVIEW)
 
         # verify review screen
-        r.check_disk(dev, "16.1 GB vda (Virtio Block Device)")
+        r.check_disk(dev, "16.1 GB sda (QEMU QEMU HARDDISK)")
 
-        r.check_disk_row(dev, "/boot", "vda2",  "1.07 GB", True, "ext4")
-        r.check_disk_row(dev, "/", "vda3", "15.0 GB", True, "btrfs")
-        r.check_disk_row(dev, "/home", "vda3", "15.0 GB",  False)
+        r.check_disk_row(dev, "/boot", "sda2",  "1.07 GB", True, "ext4")
+        r.check_disk_row(dev, "/", "sda3", "15.0 GB", True, "btrfs")
+        r.check_disk_row(dev, "/home", "sda3", "15.0 GB",  False)
         r.check_disk_row_not_present(dev, "unused")
 
         i.reach_on_sidebar(i.steps.INSTALLATION_METHOD)
@@ -156,7 +156,7 @@ class TestStorageMountPointsBtrfs (VirtInstallMachineCase):
         m = self.machine
         s = Storage(b, m)
 
-        disk = "/dev/vda"
+        disk = "/dev/sda"
         tmp_mount = "/tmp/btrfs-mount-test"
         s.partition_disk(disk, [("1MiB", "biosboot"), ("1GB", "ext4"), ("", "btrfs")])
         m.execute(f"""
@@ -180,14 +180,14 @@ class TestStorageMountPointsBtrfs (VirtInstallMachineCase):
         s = Storage(b, m)
         r = Review(b, m)
 
-        dev = "vda"
+        dev = "sda"
 
         i.open()
         i.reach(i.steps.INSTALLATION_METHOD)
 
         # Unlock the LUKS device
         s.unlock_all_encrypted()
-        s.unlock_device("einszweidrei", ["vda3"], ["vda3"])
+        s.unlock_device("einszweidrei", ["sda3"], ["sda3"])
 
         s.select_mountpoint([(dev, True)])
 
@@ -197,8 +197,8 @@ class TestStorageMountPointsBtrfs (VirtInstallMachineCase):
 
         # Verify the review page
         i.reach(i.steps.REVIEW)
-        r.check_disk_row(dev, "/boot", "vda2", "1.07 GB", False)
-        r.check_disk_row(dev, "/", "vda3", "15.0 GB", True, "btrfs", True)
+        r.check_disk_row(dev, "/boot", "sda2", "1.07 GB", False)
+        r.check_disk_row(dev, "/", "sda3", "15.0 GB", True, "btrfs", True)
 
 
 if __name__ == '__main__':

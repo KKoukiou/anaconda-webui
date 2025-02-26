@@ -27,8 +27,8 @@ class TestStorageMountPointsRAID_E2E(VirtInstallMachineCase):
         m = self.machine
         s = Storage(b, m)
 
-        disk1 = "/dev/vda"
-        disk2 = "/dev/vdb"
+        disk1 = "/dev/sda"
+        disk2 = "/dev/sdb"
         raid_name = "raid1"
 
         s.partition_disk(disk1, [("1MiB", "biosboot"),("1GB", "xfs"), ("" , None)])
@@ -55,7 +55,7 @@ class TestStorageMountPointsRAID_E2E(VirtInstallMachineCase):
     @disk_images([("", 15), ("", 15)])
     def testLVMOnRAID(self):
         """
-        Test RAID1 on partition level with LVM. Both disks (vda, vdb) have:
+        Test RAID1 on partition level with LVM. Both disks (sda, sdb) have:
         - Partition 1: biosboot (1M)
         - Partition 2: RAID1 for /boot (xfs)
         - Partition 3: RAID1 for LVM (ext4 for /).
@@ -65,8 +65,8 @@ class TestStorageMountPointsRAID_E2E(VirtInstallMachineCase):
         i = Installer(b, m)
         s = Storage(b, m)
 
-        disk1 = "/dev/vda"
-        disk2 = "/dev/vdb"
+        disk1 = "/dev/sda"
+        disk2 = "/dev/sdb"
         dev1 = disk1.split("/")[-1]
         dev2 = disk2.split("/")[-1]
         raid_name = "raid1"
@@ -84,7 +84,7 @@ class TestStorageMountPointsRAID_E2E(VirtInstallMachineCase):
         lsblk = s.get_lsblk_json()
         block_devs = lsblk["blockdevices"]
 
-        for disk in ["vda", "vdb"]:
+        for disk in ["sda", "sdb"]:
             disk_data = next(dev for dev in block_devs if dev["name"] == disk)
 
             disk_part_2 = next(part for part in disk_data["children"] if part["name"] == f"{disk}2")
