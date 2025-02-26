@@ -12,7 +12,8 @@ import sys
 BOTS_DIR = os.path.realpath(f'{__file__}/../../bots')
 sys.path.append(BOTS_DIR)
 
-missing_packages = "cockpit-ws cockpit-bridge fedora-logos udisks2 libudisks2 udisks2-lvm2 udisks2-btrfs udisks2-iscsi"
+# FIXME: remove python3-kickstart once pykickstartver 3.63-1 is available in the ISO
+missing_packages = "cockpit-ws cockpit-bridge fedora-logos udisks2 libudisks2 udisks2-lvm2 udisks2-btrfs udisks2-iscsi python3-kickstart"
 
 from machine.machine_core import machine_virtual
 
