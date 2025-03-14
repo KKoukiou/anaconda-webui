@@ -530,6 +530,7 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         # verify review screen
         checkStorageReview()
 
+
     @nondestructive
     @disk_images([("", 15), ("", 15), ("", 15)])
     def testRAIDAutomatic(self):
@@ -572,6 +573,40 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
             r.check_disk(disk, "48.3 GB MDRAID-SOMERAID (MDRAID set (stripe))")
         r.check_disk_row(disk, "/boot", "SOMERAID2, RAID", "1.07 GB", True, "xfs")
         r.check_disk_row(disk, "/", "SOMERAID3, LVM", "16.1 GB", True, "xfs")
+
+    def _testDeleteBtrfsRAID0_partition_disk(self):
+        # create RAID0 on two disks, vda1 biosboot, vda2 ext4 for boot, vda3 and vdb1 for BTRFS RAID0
+        b = self.browser
+        m = self.machine
+        s = Storage(b, m)
+
+        disk = "/dev/vda"
+        s.partition_disk(disk, [("1MiB", "biosboot"), ("1GB", "ext4"), ("10GiB", None)])
+        disk = "/dev/vdb"
+        s.partition_disk(disk, [("10GiB", None)])
+        m.execute("""
+            mkfs.btrfs -L fedora -d single -m single /dev/vda3 /dev/vdb1
+            mount /dev/vda3 /mnt/
+            btrfs subvolume create /mnt/root
+            btrfs subvolume create /mnt/home
+            umount /mnt
+        """)
+
+    @nondestructive
+    @disk_images([("", 15), ("", 15)])
+    def testDeleteBtrfsRAID0(self):
+        b = self.browser
+        m = self.machine
+        i = Installer(b, m, scenario="use-configured-storage")
+        s = Storage(b, m)
+
+        i.open()
+        i.reach(i.steps.INSTALLATION_METHOD)
+        s.select_disks([("vdb", True), ("vda", True)])
+
+        s.modify_storage()
+        s.confirm_entering_cockpit_storage()
+        b.switch_to_frame("cockpit-storage")
 
 
 if __name__ == '__main__':
