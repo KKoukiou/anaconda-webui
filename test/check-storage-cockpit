@@ -753,6 +753,101 @@ class TestStorageCockpitIntegration(VirtInstallMachineCase, StorageCase):
         self.assertTrue("/mnt/sysroot/boot auto noauto 0 0" in fstab)
         self.assertTrue("/mnt/sysroot auto noauto,subvol=/ 0 0" in fstab)
 
+    @nondestructive
+    @disk_images([("", 15), ("", 15), ("", 15)])
+    def testRedHatBugzilla2357214(self):
+        """
+        Test scenario with three disks:
+
+        - 'biosboot' and '/boot' are on 'vda'.
+        - A RAID 0 array is created using 'vdb' and 'vdc'.
+        - The root filesystem ('/') is placed on the RAID 0 device.
+
+        - Delete RAID0 deviceo
+
+        - A new RAID 1 array is created using 'vdb' and 'vdc'.
+        - The root filesystem ('/') is placed on the RAID 1 device.
+        """
+        b = self.browser
+        m = self.machine
+        i = Installer(b, m, scenario="use-configured-storage")
+        s = Storage(b, m)
+        r = Review(b, m)
+
+        i.open()
+        i.reach(i.steps.INSTALLATION_METHOD)
+        s.select_disks([("vdb", True), ("vda", True), ("vdc", True)])
+
+        s.modify_storage()
+        s.confirm_entering_cockpit_storage()
+        b.switch_to_frame("cockpit-storage")
+
+        self.addCleanup(m.execute, "mdadm --zero-superblock /dev/vdb /dev/vdc")
+        self.addCleanup(m.execute, "mdadm --stop /dev/md/SOMERAID")
+
+        self.click_dropdown(self.card_row("Storage", 1), "Create partition table")
+        self.dialog({"type": "gpt"})
+        self.click_dropdown(self.card_row("Storage", 2), "Create partition")
+        self.dialog({"size": 1, "type": "biosboot"})
+        self.click_dropdown(self.card_row("Storage", 3), "Create partition")
+        self.dialog({"size": 1070, "type": "ext4", "mount_point": "/boot"})
+
+        def createPartitioningOnRAID(level="raid0"):
+            # Create RAID device on vdb, and vdc
+            self.click_dropdown(self.card_header("Storage"), "Create MDRAID device")
+            self.dialog_wait_open()
+            self.dialog_set_val("level", level)
+            self.dialog_set_val("disks", {"vdb": True, "vdc": True})
+            self.dialog_set_val("name", "SOMERAID")
+            self.dialog_apply()
+            self.dialog_wait_close()
+
+            import time
+            time.sleep(5)
+
+            # Create / partition on the RAID device
+            self.click_dropdown(self.card_row("Storage", 7), "Create partition table")
+            self.dialog({"type": "gpt"})
+            self.click_dropdown(self.card_row("Storage", 8), "Create partition")
+            self.dialog({"type": "ext4", "mount_point": "/"})
+
+        def checkStorageReview(prefix="", raid_level="raid0"):
+            with b.wait_timeout(30):
+                disk = "vda"
+                r.check_disk(disk, f"16.1 GB {disk} (Virtio Block Device)", prefix=prefix)
+                r.check_disk_row(disk, "/boot", "vda2", "1.07 GB", False, prefix=prefix)
+
+                disk = "MDRAID-SOMERAID"
+                size = "16.1" if raid_level == "raid1" else "32.2"
+                raid_set = "mirror" if raid_level == "raid1" else "stripe"
+                r.check_disk(disk, f"{size} GB {disk} (MDRAID set ({raid_set}))", prefix=prefix)
+                r.check_disk_row(disk, "/", "SOMERAID1, RAID", f"{size} GB", False, prefix=prefix)
+
+        createPartitioningOnRAID(level="raid0")
+
+        # Exit the cockpit-storage iframe and return to installation
+        b.switch_to_top()
+        s.return_to_installation()
+        checkStorageReview(prefix="#cockpit-storage-integration-check-storage-dialog")
+        s.return_to_installation_cancel()
+
+        # Delete RAID device and expect the disk selection to be set back to the parent disks
+        b.switch_to_frame("cockpit-storage")
+        self.click_dropdown(self.card_row("Storage", 7), "Delete")
+        self.dialog_apply()
+        b.wait_not_present(self.card_row("Storage", 7))
+
+        createPartitioningOnRAID(level="raid1")
+
+        # Exit the cockpit-storage iframe and return to installation
+        b.switch_to_top()
+        s.return_to_installation()
+        checkStorageReview(prefix="#cockpit-storage-integration-check-storage-dialog", raid_level="raid1")
+        s.return_to_installation_confirm()
+
+        self.assertNotIn("parted exception", m.execute("journalctl -t org.fedoraproject.Anaconda.Modules.Storage"))
+
+        i.reach(i.steps.REVIEW)
 
 if __name__ == '__main__':
     test_main()
