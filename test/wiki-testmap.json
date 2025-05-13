@@ -4,7 +4,7 @@
         "tests":
             [
                 {
-                    "testname": "TestInstallationProgress.testBasic",
+                    "testname": "TestInstallationProgress.testBasic_non_existing",
                     "fedora-wiki-testcase": "QA:Testcase_partitioning_webui_guided_empty"
                 },
                 {
