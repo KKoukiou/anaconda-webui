@@ -12,6 +12,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program; If not, see <http://www.gnu.org/licenses/>.
+import os
 from collections import UserDict
 
 import steps
@@ -25,6 +26,7 @@ class InstallerSteps(UserDict):
     DATE_TIME = steps.DATE_TIME
     CUSTOM_MOUNT_POINT = steps.CUSTOM_MOUNT_POINT
     INSTALLATION_METHOD = steps.INSTALLATION_METHOD
+    SOFTWARE_SELECTION = steps.SOFTWARE_SELECTION
     LANGUAGE = steps.LANGUAGE
     PROGRESS = steps.PROGRESS
     REVIEW = steps.REVIEW
@@ -40,6 +42,7 @@ class InstallerSteps(UserDict):
         CUSTOM_MOUNT_POINT = self.CUSTOM_MOUNT_POINT
         DATE_TIME = self.DATE_TIME
         INSTALLATION_METHOD = self.INSTALLATION_METHOD
+        SOFTWARE_SELECTION = self.SOFTWARE_SELECTION
         LANGUAGE = self.LANGUAGE
         PROGRESS = self.PROGRESS
         REVIEW = self.REVIEW
@@ -48,16 +51,22 @@ class InstallerSteps(UserDict):
         _steps_jump = {
             LANGUAGE: [DATE_TIME],
             DATE_TIME: [INSTALLATION_METHOD],
-            STORAGE_CONFIGURATION: [ACCOUNTS],
-            CUSTOM_MOUNT_POINT: [ACCOUNTS],
+            STORAGE_CONFIGURATION: [SOFTWARE_SELECTION],
+            CUSTOM_MOUNT_POINT: [SOFTWARE_SELECTION],
+            SOFTWARE_SELECTION: [ACCOUNTS],
             ACCOUNTS: [REVIEW],
             REVIEW: [PROGRESS],
             PROGRESS: [],
         }
         _hidden_steps = hidden_steps or []
 
+        if os.environ.get("TEST_PAYLOAD", None) != "dnf":
+            _steps_jump[STORAGE_CONFIGURATION] = [ACCOUNTS]
+            _steps_jump[CUSTOM_MOUNT_POINT] = [ACCOUNTS]
+            _hidden_steps.append(SOFTWARE_SELECTION)
+
         if scenario in ['use-configured-storage', 'home-reuse']:
-            _steps_jump[INSTALLATION_METHOD] = [ACCOUNTS]
+            _steps_jump[INSTALLATION_METHOD] = _steps_jump[STORAGE_CONFIGURATION]
             _hidden_steps.extend([CUSTOM_MOUNT_POINT, STORAGE_CONFIGURATION])
         else:
             _steps_jump[INSTALLATION_METHOD] = [STORAGE_CONFIGURATION, CUSTOM_MOUNT_POINT]

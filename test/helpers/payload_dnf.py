@@ -13,13 +13,26 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program; If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import sys
 
-LANGUAGE = "anaconda-screen-language"
-DATE_TIME = "anaconda-screen-date-time"
-INSTALLATION_METHOD = "anaconda-screen-method"
-SOFTWARE_SELECTION = "anaconda-screen-software-selection"
-CUSTOM_MOUNT_POINT = "anaconda-screen-mount-point-mapping"
-STORAGE_CONFIGURATION = "anaconda-screen-storage-configuration"
-ACCOUNTS = "anaconda-screen-accounts"
-REVIEW = "anaconda-screen-review"
-PROGRESS = "anaconda-screen-progress"
+HELPERS_DIR = os.path.dirname(__file__)
+sys.path.append(HELPERS_DIR)
+
+from steps import SOFTWARE_SELECTION
+
+
+class PayloadDNF():
+    def __init__(self, browser):
+        self.browser = browser
+        self._step = SOFTWARE_SELECTION
+
+    def check_selected_environment(self, environment):
+        env_id = f"{self._step}-environment-{environment}"
+        self.browser.wait_visible(f"#{env_id}.pf-m-selected")
+
+    def select_environment(self, environment):
+        env_id = f"{self._step}-environment-{environment}"
+        self.browser.click(f"#{env_id}")
+        self.browser.wait_visible(f"#{env_id}.pf-m-selected")
+
