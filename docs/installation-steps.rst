@@ -8,9 +8,10 @@ This document describes the step-by-step process for installing the system using
 2. **Date and time**
 3. **Installation method**
 4. **Storage configuration**
-5. **Create Account**
-6. **Review and install**
-7. **Installation progress**
+5. **Software selection**
+6. **Create Account**
+7. **Review and install**
+8. **Installation progress**
 
 Detailed Step Descriptions
 =============================
@@ -73,17 +74,22 @@ Installs using only unallocated free space, preserving existing partitions and d
 
 Automatic partitioning configuration, disk encryption, and storage options.
 
-5. Create Account
+5. Software selection
+---------------------
+
+Select packages to install by choosing a base environment.
+
+6. Create Account
 -----------------
 
 Set up user accounts and administrator passwords for your system.
 
-6. Review and install
+7. Review and install
 ---------------------
 
 Review your installation settings and start the installation process.
 
-7. Installation progress
+8. Installation progress
 ------------------------
 
 Monitor the installation progress and completion.
