@@ -45,7 +45,7 @@ import { getLocaleById } from "../../helpers/localization.js";
 
 import { LanguageContext } from "../../contexts/Common.jsx";
 
-import { MenuSearch } from "./Common.jsx";
+import { MenuSearch } from "../common/MenuSearch.jsx";
 
 import "./Keyboard.scss";
 
@@ -218,6 +218,7 @@ const KeyboardDialog = ({ currentLayouts = [], onClose, onSaved }) => {
                               handleOnSelect={addLayout}
                               menuType="keyboard"
                               options={options}
+                              screenId={SCREEN_ID}
                             />
                         </div>
                     </GridItem>
