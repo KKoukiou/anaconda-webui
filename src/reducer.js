@@ -75,8 +75,9 @@ export const miscInitialState = {
 
 /* Initial state for the payload store substate */
 export const payloadInitialState = {
-    environment: null,
     environments: [],
+    groups: [],
+    selection: null,
     type: null,
 };
 
@@ -245,12 +246,17 @@ export const timezoneReducer = (state = timezoneInitialState, action) => {
 };
 
 export const payloadReducer = (state = payloadInitialState, action) => {
-    if (action.type === "SET_PAYLOAD_ENVIRONMENT") {
-        return { ...state, environment: action.payload.environment };
+    if (action.type === "SET_PAYLOAD_SELECTION") {
+        return { ...state, selection: action.payload.selection };
     } else if (action.type === "SET_PAYLOAD_ENVIRONMENTS") {
         return { ...state, environments: action.payload.environments || [] };
     } else if (action.type === "SET_PAYLOAD_TYPE") {
         return { ...state, type: action.payload.type };
+    } else if (action.type === "SET_PAYLOAD_GROUPS") {
+        return {
+            ...state,
+            groups: action.payload.groups || [],
+        };
     } else {
         return state;
     }

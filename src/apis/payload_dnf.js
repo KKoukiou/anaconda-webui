@@ -18,8 +18,9 @@
 import cockpit from "cockpit";
 
 import {
-    getPayloadEnvironmentAction,
     getPayloadEnvironmentsAction,
+    getPayloadGroupsAction,
+    getPayloadPackagesSelectionAction,
 } from "../actions/payload-dnf-actions.js";
 
 import { _getProperty, _setProperty, objectFromDbus, objectToDbus } from "./helpers.js";
@@ -60,6 +61,7 @@ export class PayloadDNFClient {
         this.client = client;
         this.dispatch = dispatch;
         this.payload = payload;
+        this._lastEnvironment = null;
     }
 
     async init () {
@@ -70,7 +72,23 @@ export class PayloadDNFClient {
 
     async initData () {
         await this.dispatch(getPayloadEnvironmentsAction());
-        await this.dispatch(getPayloadEnvironmentAction());
+        await this.dispatch(getPayloadPackagesSelectionAction());
+
+        // Fetch groups for initial environment
+        const selection = await getPackagesSelection();
+        const environment = selection?.environment;
+        this._lastEnvironment = environment;
+        if (environment) {
+            await this.dispatch(getPayloadGroupsAction(environment));
+        }
+    }
+
+    _handleEnvironmentChange (environment) {
+        // Fetch groups when environment changes
+        if (environment !== this._lastEnvironment) {
+            this._lastEnvironment = environment;
+            this.dispatch(getPayloadGroupsAction(environment));
+        }
     }
 
     startEventMonitor () {
@@ -82,7 +100,10 @@ export class PayloadDNFClient {
                     if (path === this.payload &&
                         args[0] === INTERFACE_NAME &&
                         Object.hasOwn(args[1], "PackagesSelection")) {
-                        this.dispatch(getPayloadEnvironmentAction());
+                        if (args[1].PackagesSelection.v.environment.v) {
+                            this._handleEnvironmentChange(args[1].PackagesSelection.v.environment.v);
+                        }
+                        this.dispatch(getPayloadPackagesSelectionAction());
                     }
                     break;
                 }
@@ -108,12 +129,17 @@ export const getEnvironmentData = async (environmentSpec) => {
     return objectFromDbus(structure);
 };
 
+export const getGroupData = async (groupSpec) => {
+    const structure = await callClient("GetGroupData", [groupSpec]);
+    return objectFromDbus(structure);
+};
+
 export const getPackagesSelection = async () => {
     const structure = await getProperty("PackagesSelection");
     return objectFromDbus(structure);
 };
 
-export const setPackagesSelection = async ({ environment } = {}) => {
+export const setPackagesSelection = async ({ environment, groups } = {}) => {
     const currentSelection = await getPackagesSelection();
 
     const updatedSelection = {
@@ -122,6 +148,10 @@ export const setPackagesSelection = async ({ environment } = {}) => {
 
     if (environment !== undefined) {
         updatedSelection.environment = environment || "";
+    }
+
+    if (groups !== undefined) {
+        updatedSelection.groups = groups;
     }
 
     const structure = objectToDbus(updatedSelection);

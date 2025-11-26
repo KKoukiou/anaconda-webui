@@ -16,9 +16,9 @@
  */
 
 import {
-    getDefaultEnvironment,
     getEnvironmentData,
     getEnvironments,
+    getGroupData,
     getPackagesSelection,
 } from "../apis/payload_dnf.js";
 
@@ -45,19 +45,46 @@ export const getPayloadEnvironmentsAction = () => {
     };
 };
 
-export const getPayloadEnvironmentAction = () => {
+export const getPayloadPackagesSelectionAction = () => {
     return async (dispatch) => {
         const selection = await getPackagesSelection();
-        let environment = selection?.environment;
-
-        // Only get default environment if no environment is selected
-        if (!environment) {
-            environment = await getDefaultEnvironment();
-        }
 
         return dispatch({
-            payload: { environment },
-            type: "SET_PAYLOAD_ENVIRONMENT"
+            payload: { selection },
+            type: "SET_PAYLOAD_SELECTION"
+        });
+    };
+};
+
+export const getPayloadGroupsAction = (environment) => {
+    return async (dispatch) => {
+        const envData = await getEnvironmentData(environment);
+
+        // Get available groups from environment data
+        const optionalGroups = envData["optional-groups"];
+        const visibleGroups = envData["visible-groups"];
+        const defaultGroups = envData["default-groups"];
+
+        // Combine all groups, removing duplicates
+        const allGroups = [...new Set([...optionalGroups, ...visibleGroups])];
+
+        // Fetch group data for each group
+        const groupDataPromises = allGroups.map(async (groupId) => {
+            const groupData = await getGroupData(groupId);
+            return {
+                description: groupData.description,
+                id: groupId,
+                isDefault: defaultGroups.includes(groupId),
+                isOptional: optionalGroups.includes(groupId),
+                name: groupData.name,
+            };
+        });
+
+        const groups = await Promise.all(groupDataPromises);
+
+        return dispatch({
+            payload: { groups },
+            type: "SET_PAYLOAD_GROUPS"
         });
     };
 };
