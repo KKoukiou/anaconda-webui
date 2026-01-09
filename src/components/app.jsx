@@ -45,7 +45,7 @@ export const ApplicationLoading = () => (
     </PageSection>
 );
 
-export const Application = ({ conf, dispatch, isFetching, onCritFail, osRelease, reportLinkURL, setShowStorage, showStorage }) => {
+export const Application = ({ dispatch, isFetching, onCritFail, osRelease, reportLinkURL, setShowStorage, showStorage }) => {
     const [storeInitialized, setStoreInitialized] = useState(false);
     const [currentStepId, setCurrentStepId] = useState();
     const address = useAddress();
@@ -111,9 +111,7 @@ export const Application = ({ conf, dispatch, isFetching, onCritFail, osRelease,
               currentStepId={currentStepId}
               isFetching={isFetching}
               onCritFail={onCritFail}
-              title={title}
               dispatch={dispatch}
-              conf={conf}
               setCurrentStepId={setCurrentStepId}
               showStorage={showStorage}
             />
