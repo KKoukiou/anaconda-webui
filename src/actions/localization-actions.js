@@ -18,9 +18,11 @@
 import {
     getCommonLocales,
     getKeyboardConfiguration,
+    getKeyboardKickstarted,
     getKeyboardLayouts,
     getLanguage,
     getLanguageData,
+    getLanguageKickstarted,
     getLanguages,
     getLocaleData,
     getLocales,
@@ -106,6 +108,23 @@ export const getKeyboardConfigurationAction = () => {
                     type: "GET_PLANNED_KEYBOARD_CONFIGURATION"
                 });
             }
+        });
+    };
+};
+
+export const getLocalizationKickstartedAction = () => {
+    return async (dispatch) => {
+        const [languageKickstarted, keyboardKickstarted] = await Promise.all([
+            getLanguageKickstarted(),
+            getKeyboardKickstarted()
+        ]);
+
+        // Screen-level kickstart state: both language and keyboard must be kickstarted
+        const localizationKickstarted = languageKickstarted && keyboardKickstarted;
+
+        return dispatch({
+            payload: { localizationKickstarted },
+            type: "GET_LOCALIZATION_KICKSTARTED"
         });
     };
 };

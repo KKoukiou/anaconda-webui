@@ -35,11 +35,15 @@ export const AnacondaPage = ({
     showStorage,
     step,
     title,
+    useIsPageKickstarted,
     usePageInit,
 }) => {
     const [stepNotification, setStepNotification] = useState();
     const [showPage, setShowPage] = useState(!isFormDisabled);
     const showPageRef = useRef(showPage);
+
+    // Check if page is kickstarted using the page-specific hook
+    const isKickstarted = useIsPageKickstarted?.() ?? false;
 
     // If there is usePageInit custom hook for the page, call it
     usePageInit?.();
@@ -77,6 +81,14 @@ export const AnacondaPage = ({
     return (
         <Stack hasGutter>
             {titleElem && <Title headingLevel="h2">{titleElem}</Title>}
+            {isKickstarted && (
+                <Alert
+                  id={step + "-kickstart-banner"}
+                  isInline
+                  title={_("This step is configured by Kickstart")}
+                  variant="info"
+                />
+            )}
             {stepNotification?.step === step &&
                 <Alert
                   id={step + "-step-notification"}

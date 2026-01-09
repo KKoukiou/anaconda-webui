@@ -27,10 +27,14 @@ import {
 
 import {
     convertToCockpitLang,
+    findLocaleWithId,
     getLangCookie,
+    getLanguageEnglishName,
+    getLanguageNativeName,
+    getLocaleId,
+    getLocaleNativeName,
     setLangCookie
 } from "../../helpers/language.js";
-import { error as loggerError } from "../../helpers/log.js";
 
 import { LanguageContext, SystemTypeContext } from "../../contexts/Common.jsx";
 
@@ -41,12 +45,6 @@ import "./InstallationLanguage.scss";
 
 const _ = cockpit.gettext;
 const SCREEN_ID = "anaconda-screen-language";
-const error = loggerError.bind(null, SCREEN_ID + ":");
-
-const getLanguageEnglishName = lang => lang["english-name"].v;
-const getLanguageNativeName = lang => lang["native-name"].v;
-const getLocaleId = locale => locale["locale-id"].v;
-const getLocaleNativeName = locale => locale["native-name"].v;
 
 class LanguageSelector extends React.Component {
     constructor (props) {
@@ -72,19 +70,6 @@ class LanguageSelector extends React.Component {
     renderOptions () {
         const { commonLocales, languages } = this.props;
         const options = [];
-
-        // Returns a locale with a given code.
-        const findLocaleWithId = (localeCode) => {
-            for (const languageId in languages) {
-                const languageItem = languages[languageId];
-                for (const locale of languageItem.locales) {
-                    if (getLocaleId(locale) === localeCode) {
-                        return locale;
-                    }
-                }
-            }
-            error(`Locale with code ${localeCode} not found.`);
-        };
 
         const onSearch = (locale, search) => {
             const searchLower = search.toLowerCase();
@@ -230,39 +215,34 @@ export const InstallationLanguage = ({ dispatch, setIsFormValid, setStepNotifica
     useEffect(() => {
         setIsFormValid(isLanguageValid && isKeyboardValid);
     }, [isLanguageValid, isKeyboardValid, setIsFormValid]);
-
     return (
-        <>
-            <Form isHorizontal>
+        <Form isHorizontal>
+            <FormGroup
+              label={_("Language")}
+            >
+                <LanguageSelector
+                  id="language-selector"
+                  languages={languages}
+                  commonLocales={commonLocales}
+                  language={language}
+                  setIsFormValid={setIsFormValid}
+                  setStepNotification={setStepNotification}
+                />
+            </FormGroup>
+
+            {keyboardLayouts.length > 0 && (
                 <FormGroup
-                  className="anaconda-screen-selectors-container"
-                  label={_("Language")}
+                  fieldId={`${SCREEN_ID}-keyboard-layouts`}
+                  label={_("Keyboard")}
                 >
-                    <LanguageSelector
-                      id="language-selector"
-                      languages={languages}
-                      commonLocales={commonLocales}
-                      language={language}
-                      setIsFormValid={setIsFormValid}
+                    <Keyboard
+                      dispatch={dispatch}
+                      isGnome={isGnome}
+                      setIsKeyboardValid={setIsKeyboardValid}
                       setStepNotification={setStepNotification}
                     />
                 </FormGroup>
-
-                {keyboardLayouts.length > 0 && (
-                    <FormGroup
-                      className={!isGnome ? "anaconda-screen-selectors-container" : ""}
-                      fieldId={`${SCREEN_ID}-keyboard-layouts`}
-                      label={_("Keyboard")}
-                    >
-                        <Keyboard
-                          dispatch={dispatch}
-                          isGnome={isGnome}
-                          setIsKeyboardValid={setIsKeyboardValid}
-                          setStepNotification={setStepNotification}
-                        />
-                    </FormGroup>
-                )}
-            </Form>
-        </>
+            )}
+        </Form>
     );
 };

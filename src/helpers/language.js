@@ -32,3 +32,44 @@ export const setLangCookie = ({ cockpitLang }) => {
     document.cookie = cookie;
     window.localStorage.setItem("cockpit.lang", cockpitLang);
 };
+
+export const getLanguageEnglishName = lang => lang["english-name"].v;
+export const getLanguageNativeName = lang => lang["native-name"].v;
+export const getLocaleId = locale => locale["locale-id"].v;
+export const getLocaleNativeName = locale => locale["native-name"].v;
+
+/**
+ * Find a locale object by its locale ID.
+ * @param {string} localeCode - The locale ID to find (e.g., "en_US.UTF-8")
+ * @param {Object} languages - The languages object containing locale data
+ * @returns {Object|undefined} - The locale object if found, undefined otherwise
+ */
+export const findLocaleWithId = (localeCode, languages) => {
+    if (!localeCode || !languages) {
+        return undefined;
+    }
+    for (const languageId in languages) {
+        const languageItem = languages[languageId];
+        for (const locale of languageItem.locales) {
+            if (getLocaleId(locale) === localeCode) {
+                return locale;
+            }
+        }
+    }
+    return undefined;
+};
+
+/**
+ * Find the display name for a language locale ID.
+ * Searches through the languages object to find the matching locale and returns its native name.
+ * @param {string} language - The locale ID to find (e.g., "en_US.UTF-8")
+ * @param {Object} languages - The languages object containing locale data
+ * @returns {string} - The native display name of the language, or the original language ID if not found
+ */
+export const getLanguageDisplayName = (language, languages) => {
+    const locale = findLocaleWithId(language, languages);
+    if (locale) {
+        return getLocaleNativeName(locale);
+    }
+    return language || "";
+};

@@ -17,7 +17,13 @@
 
 import cockpit from "cockpit";
 
-import { getKeyboardConfigurationAction, getKeyboardLayoutsAction, getLanguageAction, getLanguagesAction } from "../actions/localization-actions.js";
+import {
+    getKeyboardConfigurationAction,
+    getKeyboardLayoutsAction,
+    getLanguageAction,
+    getLanguagesAction,
+    getLocalizationKickstartedAction,
+} from "../actions/localization-actions.js";
 
 import { debug, error } from "../helpers/log.js";
 import { _callClient, _getProperty, _setProperty } from "./helpers.js";
@@ -66,6 +72,7 @@ export class LocalizationClient {
         await this.dispatch(getLanguagesAction());
         await this.dispatch(getKeyboardLayoutsAction());
         await this.dispatch(getKeyboardConfigurationAction());
+        await this.dispatch(getLocalizationKickstartedAction());
     }
 
     startEventMonitor () {
@@ -218,4 +225,18 @@ export const setXKeyboardDefaults = async () => {
     // kickstart, preventing new defaults from being applied.
     await setXLayouts({ layouts: [] });
     await callClient("SetXKeyboardDefaults");
+};
+
+/**
+ * @returns {Promise<boolean>}   Whether language is kickstarted
+ */
+export const getLanguageKickstarted = () => {
+    return getProperty("LanguageKickstarted");
+};
+
+/**
+ * @returns {Promise<boolean>}   Whether keyboard is kickstarted
+ */
+export const getKeyboardKickstarted = () => {
+    return getProperty("KeyboardKickstarted");
 };

@@ -15,22 +15,22 @@
  * along with This program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-import cockpit from "cockpit";
+import React from "react";
 
 import { useIsLocalizationKickstarted } from "../../hooks/Localization.jsx";
 
-import { Localization } from "./Localization.jsx";
+import { InstallationLanguage } from "./InstallationLanguage.jsx";
+import { LocalizationReadOnly } from "./LocalizationReadOnly.jsx";
 
-const _ = cockpit.gettext;
+/**
+ * Wrapper component that determines which component to render based on kickstart status.
+ */
+export const Localization = (props) => {
+    const isKickstarted = useIsLocalizationKickstarted();
 
-export class Page {
-    _description = "Select the language & keyboard to use during installation and for the target system.";
-
-    constructor () {
-        this.component = Localization;
-        this.id = "anaconda-screen-language";
-        this.label = _("Welcome");
-        this.title = _("Welcome to Fedora Linux");
-        this.useIsPageKickstarted = useIsLocalizationKickstarted;
+    if (isKickstarted) {
+        return <LocalizationReadOnly {...props} />;
     }
-}
+
+    return <InstallationLanguage {...props} />;
+};

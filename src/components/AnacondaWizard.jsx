@@ -65,6 +65,7 @@ export const AnacondaWizard = ({ currentStepId, dispatch, isFetching, onCritFail
     const createSteps = (stepsOrder, componentProps) => {
         return stepsOrder.map(s => {
             const isVisited = firstStepId === s.id || currentStepId === s.id;
+
             let stepProps = {
                 id: s.id,
                 isAriaDisabled: isFormDisabled || isFetching,
@@ -74,6 +75,7 @@ export const AnacondaWizard = ({ currentStepId, dispatch, isFetching, onCritFail
                 stepNavItemProps: { id: s.id },
                 ...(s.steps?.length && { isExpandable: true }),
             };
+
             if (s.component) {
                 stepProps = {
                     children: (
@@ -84,6 +86,7 @@ export const AnacondaWizard = ({ currentStepId, dispatch, isFetching, onCritFail
                           title={s.title}
                           isFirstScreen={s.isFirstScreen}
                           showStorage={showStorage}
+                          useIsPageKickstarted={s.useIsPageKickstarted}
                           usePageInit={s.usePageInit}>
                             <s.component {...componentProps} isFirstScreen={s.isFirstScreen} />
                         </AnacondaPage>

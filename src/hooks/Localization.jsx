@@ -15,22 +15,15 @@
  * along with This program; If not, see <http://www.gnu.org/licenses/>.
  */
 
-import cockpit from "cockpit";
+import { useContext } from "react";
 
-import { useIsLocalizationKickstarted } from "../../hooks/Localization.jsx";
+import { LanguageContext } from "../contexts/Common.jsx";
 
-import { Localization } from "./Localization.jsx";
-
-const _ = cockpit.gettext;
-
-export class Page {
-    _description = "Select the language & keyboard to use during installation and for the target system.";
-
-    constructor () {
-        this.component = Localization;
-        this.id = "anaconda-screen-language";
-        this.label = _("Welcome");
-        this.title = _("Welcome to Fedora Linux");
-        this.useIsPageKickstarted = useIsLocalizationKickstarted;
-    }
-}
+/**
+ * Hook to check if the localization step is kickstarted.
+ * @returns {boolean} - True if both language and keyboard are kickstarted
+ */
+export const useIsLocalizationKickstarted = () => {
+    const { localizationKickstarted } = useContext(LanguageContext);
+    return localizationKickstarted ?? false;
+};
