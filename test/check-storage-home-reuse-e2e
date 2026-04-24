@@ -107,6 +107,7 @@ class TestStorageHomeReuse_E2E(VirtInstallMachineCase):
         i.reach(i.steps.INSTALLATION_METHOD)
 
         s.set_scenario("home-reuse")
+        i.next(next_page=i.get_current_page())
         i.reach(i.steps.REVIEW)
 
         self.install(needs_confirmation=True)

@@ -92,6 +92,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         #     ignore=pixel_tests_ignore,
         # )
 
+        i.next(should_fail=True)
         i.reach(i.steps.REVIEW)
 
         # verify review screen
@@ -118,6 +119,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
             next_idx += 1
         s.check_mountpoint_row(next_idx, "/boot", f"{dev}3", False)
 
+        i.next(should_fail=True)
         i.next()
         new_applied_partitioning = s.dbus_get_applied_partitioning()
         self.assertNotEqual(new_applied_partitioning, applied_partitioning)
@@ -192,6 +194,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         # BZ#2443812: deselected reformat for "/" is maintained after next/back.
         s.select_mountpoint_row_device(1, f"{dev}3")
         s.select_mountpoint_row_reformat(1, False)
+        i.next(should_fail=True)
         i.next(next_page=i.steps.ACCOUNTS)
         i.back(previous_page=i.steps.CUSTOM_MOUNT_POINT)
         s.check_mountpoint_row_reformat(1, False)
@@ -264,6 +267,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         s.select_mountpoint_row_mountpoint(3, "/home")
         s.check_mountpoint_row(3, "/home", f"{dev2}1", False, "xfs")
 
+        i.next(should_fail=True)
         i.reach(i.steps.REVIEW)
 
         # verify review screen
@@ -321,6 +325,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         s.select_mountpoint_row_device(1, f"{dev}3")
         s.select_mountpoint_row_device(2, f"{dev}2")
 
+        i.next(should_fail=True)
         i.reach(i.steps.REVIEW)
 
         r.check_size_error()
@@ -347,6 +352,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         s.select_mountpoint_row_device(3, f"{dev}4")
         s.select_mountpoint_row_reformat(3)
 
+        i.next(should_fail=True)
         i.reach(i.steps.REVIEW)
 
         r.check_size_error()
@@ -370,6 +376,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         # two mount points used to count the required space
         s.select_mountpoint_row_device(3, f"{dev}5")
 
+        i.next(should_fail=True)
         i.reach(i.steps.REVIEW)
 
         r.check_size_error(False)
@@ -417,6 +424,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
 
         s.select_mountpoint_row_reformat(2)
 
+        i.next()
         i.reach(i.steps.REVIEW)
 
         # verify review screen
@@ -503,6 +511,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
 
         s.check_mountpoint_row_format_type(1, "xfs")
 
+        i.next(should_fail=True)
         i.reach(i.steps.REVIEW)
         r.check_disk_row(dev1, "/", "vda3", "", True, "xfs", True)
 
@@ -646,6 +655,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         s.select_mountpoint_row_mountpoint(4, "/home/alan")
         s.select_mountpoint_row_device(4, "home", device_id=btrfs_volume_ids[1])
 
+        i.next(should_fail=True)
         i.reach(i.steps.REVIEW)
 
         # verify review screen
@@ -786,6 +796,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         s.select_mountpoint_row_device(4, "home")
         s.check_mountpoint_row_reformat(4, False)
 
+        i.next(should_fail=True)
         i.reach(i.steps.REVIEW)
 
         dev_win_fed = "vda"
@@ -866,6 +877,7 @@ class TestStorageMountPoints(VirtInstallMachineCase, StorageCase):
         s.select_mountpoint_row_device(next_idx, luks_device)
 
         # Verify review shows /home as encrypted and mounted on disk2
+        i.next(should_fail=True)
         i.reach(i.steps.REVIEW)
         r.check_disk(dev1, "16.1 GB vda (Virtio Block Device)")
         r.check_disk_row(dev1, "/boot/efi", f"{dev1}1", "537 MB", False, "efi")

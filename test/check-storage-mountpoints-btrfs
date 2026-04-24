@@ -198,6 +198,7 @@ class TestStorageMountPointsBtrfs (VirtInstallMachineCase):
         s.select_mountpoint_row_device(2, f"{dev}2")
 
         # Verify the review page
+        i.next(should_fail=True)
         i.reach(i.steps.REVIEW)
         r.check_disk_row(dev, "/boot", "vda2", "1.07 GB", False)
         r.check_disk_row(dev, "/", "vda3", "15.0 GB", True, "btrfs", True)
