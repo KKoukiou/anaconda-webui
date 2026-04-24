@@ -81,6 +81,17 @@ export const parseAnacondaConfBool = (raw) => {
     return t === "true" || t === "yes" || t === "1";
 };
 
+/**
+ * Space-separated tokens from an anaconda.conf option value (same idea as
+ * Python configparser whitespace split on list-style options).
+ *
+ * @param {string|undefined} raw
+ * @returns {string[]}
+ */
+export const parseAnacondaConfList = (raw) => (raw || "").trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
 export const readConf = () => {
     const confFile = cockpit.file(CONF_PATH, { superuser: "try", });
     return confFile.read()

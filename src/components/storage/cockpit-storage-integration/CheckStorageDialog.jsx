@@ -37,13 +37,16 @@ import {
 
 import { getDevicesAction, setStorageScenarioAction } from "../../../actions/storage-actions.js";
 
+import { readConf } from "../../../helpers/conf.js";
 import { debug as loggerDebug } from "../../../helpers/log.js";
 import {
     bootloaderTypes,
+    cockpitImportMountRequestsReformat,
     getDeviceAncestors,
     getDeviceByName,
     getDeviceByPath,
     getDeviceChildren,
+    getReformatPrefixListsFromInstallerConf,
     getUsableDevicesManualPartitioning,
 } from "../../../helpers/storage.js";
 import { checkIfArraysAreEqual } from "../../../helpers/utils.js";
@@ -99,6 +102,9 @@ const CheckStorageDialogWarningAlert = ({ messages }) => (
 
 const preparePartitioning = async ({ devices, newMountPoints, onFail }) => {
     try {
+        const conf = await readConf();
+        const reformatPrefixes = getReformatPrefixListsFromInstallerConf(conf);
+
         const selectedDisks = await getSelectedDisks();
         const partitioning = await createPartitioning({ method: "MANUAL" });
         const requests = await gatherRequests({ partitioning });
@@ -137,6 +143,8 @@ const preparePartitioning = async ({ devices, newMountPoints, onFail }) => {
             }
 
             if (usableDevices.includes(deviceSpec) && (dir || type === "swap")) {
+                const mountPoint = dir || type;
+                const reformat = cockpitImportMountRequestsReformat(mountPoint, reformatPrefixes);
                 const existingRequestIndex = (
                     requests.findIndex(request => request["device-spec"].v === deviceSpec)
                 );
@@ -145,12 +153,14 @@ const preparePartitioning = async ({ devices, newMountPoints, onFail }) => {
                     requests[existingRequestIndex] = {
                         ...requests[existingRequestIndex],
                         "device-spec": cockpit.variant("s", deviceSpec),
-                        "mount-point": cockpit.variant("s", dir || type),
+                        "mount-point": cockpit.variant("s", mountPoint),
+                        reformat: cockpit.variant("b", reformat),
                     };
                 } else {
                     requests.push({
                         "device-spec": cockpit.variant("s", deviceSpec),
-                        "mount-point": cockpit.variant("s", dir || type),
+                        "mount-point": cockpit.variant("s", mountPoint),
+                        reformat: cockpit.variant("b", reformat),
                     });
                 }
             } else if (subvolumes) {
