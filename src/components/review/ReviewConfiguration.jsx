@@ -281,6 +281,7 @@ const useConfirmationCheckboxLabel = () => {
     const { diskSelection } = useContext(StorageContext);
     const usableDisks = diskSelection.usableDisks;
     const selectedDisks = diskSelection.selectedDisks;
+    const { id: scenarioId } = useScenario();
 
     const relevantDevices = selectedDisks
             .map(disk => getDeviceChildren({ device: disk, deviceData: originalDevices }))
@@ -303,6 +304,14 @@ const useConfirmationCheckboxLabel = () => {
         const someDevicesDeletedText = _("I understand that some existing data will be erased");
         const someDevicesResizedText = _("I understand that some partitions will be modified");
 
+        // Specific partitions are being reformatted behind the scenes in this
+        // scenario, but the user didn't explicitly choose those actions, so we
+        // shouldn't highlight that fact in the confirmation message.
+        if (scenarioId === "use-configured-storage") {
+            setScenarioConfirmationLabel("");
+            return;
+        }
+
         if (allDevicesDeleted) {
             setScenarioConfirmationLabel(allDevicesDeletedText);
         } else if (someDevicesDeleted) {
@@ -312,7 +321,13 @@ const useConfirmationCheckboxLabel = () => {
         } else {
             setScenarioConfirmationLabel("");
         }
-    }, [allDevicesDeleted, someDevicesDeleted, someDevicesResized, usableDisks.length]);
+    }, [
+        allDevicesDeleted,
+        scenarioId,
+        someDevicesDeleted,
+        someDevicesResized,
+        usableDisks.length
+    ]);
 
     return scenarioConfirmationLabel;
 };
