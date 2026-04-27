@@ -5,7 +5,6 @@
 
 import cockpit from "cockpit";
 
-import { getInstallerConfValue, parseAnacondaConfList } from "./conf.js";
 import { checkIfArraysAreEqual } from "./utils.js";
 
 export const requestsFromDbus = (requests) => {
@@ -304,45 +303,6 @@ export const hasReusableFedoraWithWindowsOS = (deviceData, selectedDisks, existi
             getOSDisks(deviceData, windowsSystems[0])
         )
     );
-};
-
-const STORAGE_CONSTRAINTS_SECTION = "Storage Constraints";
-
-/**
- * Prefix lists from `[Storage Constraints]` in installer conf (reformat_allowlist / reformat_blocklist).
- * @param {object|undefined} conf - Parsed `/run/anaconda/anaconda.conf`.
- * @returns {{ allowPrefixes: string[], blockPrefixes: string[] }}
- */
-export const getReformatPrefixListsFromInstallerConf = (conf) => ({
-    allowPrefixes: parseAnacondaConfList(
-        getInstallerConfValue(conf, STORAGE_CONSTRAINTS_SECTION, "reformat_allowlist")
-    ),
-    blockPrefixes: parseAnacondaConfList(
-        getInstallerConfValue(conf, STORAGE_CONSTRAINTS_SECTION, "reformat_blocklist")
-    ),
-});
-
-/**
- * Whether a Cockpit-import manual request should set `reformat`.
- *
- * @param {string} mountPoint
- * @param {{ allowPrefixes: string[], blockPrefixes: string[] }} prefixLists
- * @returns {boolean}
- */
-export const cockpitImportMountRequestsReformat = (mountPoint, { allowPrefixes, blockPrefixes }) => {
-    if (mountPoint === "swap" || mountPoint === "none") {
-        return false;
-    }
-    if (typeof mountPoint !== "string" || !mountPoint.startsWith("/")) {
-        return false;
-    }
-    if (mountPoint === "/") {
-        return true;
-    }
-    if (blockPrefixes.some(p => mountPoint === p || mountPoint.startsWith(p + "/"))) {
-        return false;
-    }
-    return allowPrefixes.some(p => mountPoint === p || mountPoint.startsWith(p + "/"));
 };
 
 /**
