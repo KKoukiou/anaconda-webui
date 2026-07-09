@@ -50,20 +50,40 @@ const _ = cockpit.gettext;
 // When "Restrict access to the report" is checked, the bug is restricted to this group (GTK uses the same default).
 const DEFAULT_RESTRICT_GROUP = "fedora_contrib_private";
 
-const JOURNAL_LOG = "/tmp/journal.log";
 const ANACONDA_LOG = "/tmp/anaconda.log";
-const STORAGE_LOG = "/tmp/storage.log";
-const PROGRAM_LOG = "/tmp/program.log";
+const ANACONDA_TB = "/tmp/anaconda-tb";
+const CMDLINE = "/proc/cmdline";
+const DBUS_LOG = "/tmp/dbus.log";
+const DNF_LIBREPO_LOG = "/tmp/dnf.librepo.log";
+const HAWKEY_LOG = "/tmp/hawkey.log";
+const INSTALL_LOG = "/mnt/sysroot/root/install.log";
+const JOURNAL_LOG = "/tmp/journal.log";
+const KICKSTART_LOG = "/tmp/ks.cfg";
+const LORAX_PACKAGES_LOG = "/root/lorax-packages.log";
+const LVM_LOG = "/tmp/lvm.log";
 const PACKAGING_LOG = "/tmp/packaging.log";
+const PROGRAM_LOG = "/tmp/program.log";
+const STORAGE_LOG = "/tmp/storage.log";
+const SYSLOG = "/tmp/syslog";
 const WEBUI_LOG = "/tmp/anaconda-webui.log";
 
 const LOG_FILES = [
+    ANACONDA_TB,
     JOURNAL_LOG,
     ANACONDA_LOG,
     STORAGE_LOG,
     PROGRAM_LOG,
     PACKAGING_LOG,
-    WEBUI_LOG
+    WEBUI_LOG,
+    DNF_LIBREPO_LOG,
+    HAWKEY_LOG,
+    LVM_LOG,
+    DBUS_LOG,
+    SYSLOG,
+    INSTALL_LOG,
+    CMDLINE,
+    LORAX_PACKAGES_LOG,
+    KICKSTART_LOG
 ];
 
 const ensureMaximumReportURLLength = (reportURL) => {
@@ -145,6 +165,33 @@ const useEnvironmentInfo = () => {
         `Anaconda version: ${appVersion.backend}`,
         `Anaconda UI version: ${appVersion.webui}`
     ].join("\n");
+};
+
+/**
+ * Hook to check which log files exist
+ * Returns array of existing log file basenames (with /tmp/ stripped)
+ */
+const useExistingLogFiles = () => {
+    const [existingLogFiles, setExistingLogFiles] = useState([]);
+
+    useEffect(() => {
+        const checkFiles = async () => {
+            const checks = await Promise.all(
+                LOG_FILES.map(async (file) => {
+                    try {
+                        await cockpit.file(file).read();
+                        return file.replace("/tmp/", "");
+                    } catch {
+                        return null;
+                    }
+                })
+            );
+            setExistingLogFiles(checks.filter(f => f !== null));
+        };
+        checkFiles();
+    }, []);
+
+    return existingLogFiles;
 };
 
 /**
@@ -308,7 +355,7 @@ const BZReportDetailsForm = ({
     const component = componentFromException(exception);
     const isBootIso = useContext(SystemTypeContext).systemType === "BOOT_ISO";
     const manualReportLinkURL = useBugzillaPrefiledReportURL(component, exception);
-    const logFiles = LOG_FILES.map(file => file.replace("/tmp/", ""));
+    const existingLogFiles = useExistingLogFiles();
     const restrictAccessLearnMoreURL = `${BUGZILLA_BASE_URL}/userprefs.cgi?tab=permissions`;
 
     return (
@@ -369,10 +416,12 @@ const BZReportDetailsForm = ({
               isInline
             >
                 <Content>
-                    {fmtToFragments(
-                        _("When you submit this bug report, the following log files will be uploaded automatically: $0"),
-                        <strong>{logFiles.join(", ")}</strong>
-                    )}
+                    {existingLogFiles.length > 0
+                        ? fmtToFragments(
+                            _("When you submit this bug report, the following log files will be uploaded automatically: $0"),
+                            <strong>{existingLogFiles.join(", ")}</strong>
+                        )
+                        : _("When you submit this bug report, available log files will be uploaded automatically.")}
                 </Content>
                 <Content>
                     {_("These log files may contain sensitive information such as IP addresses, usernames, or other system details.")}
