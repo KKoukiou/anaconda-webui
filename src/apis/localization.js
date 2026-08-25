@@ -89,7 +89,11 @@ export class LocalizationClient {
                 switch (signal) {
                 case "CompositorSelectedLayoutChanged":
                 case "CompositorLayoutsChanged":
-                    await this.dispatch(getKeyboardConfigurationAction());
+                    clearTimeout(this._keyboardDebounce);
+                    this._keyboardDebounce = setTimeout(
+                        () => this.dispatch(getKeyboardConfigurationAction()),
+                        300
+                    );
                     break;
                 case "PropertiesChanged":
                     if (args[0] === INTERFACE_NAME && Object.hasOwn(args[1], "Language")) {
