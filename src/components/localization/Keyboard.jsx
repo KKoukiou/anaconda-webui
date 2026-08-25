@@ -392,7 +392,6 @@ export const Keyboard = ({ dispatch, isGnome, setIsKeyboardValid }) => {
         });
     }, [keyboardConfigError, setStepNotification]);
 
-    // Fetch keyboard configuration when component mounts
     useEffect(() => {
         dispatch(getKeyboardConfigurationAction({
             onError: setKeyboardConfigError,

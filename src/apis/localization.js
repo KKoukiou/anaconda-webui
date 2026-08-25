@@ -70,7 +70,12 @@ export class LocalizationClient {
 
         await this.dispatch(getLanguagesAction());
         await this.dispatch(getKeyboardLayoutsAction());
-        await this.dispatch(getKeyboardConfigurationAction());
+
+        // For automated installs the Keyboard component won't mount,
+        // so fetch keyboard configuration here for page-completion checks.
+        if (automatedInstall) {
+            await this.dispatch(getKeyboardConfigurationAction());
+        }
     }
 
     stopEventMonitor () {
