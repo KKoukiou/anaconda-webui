@@ -29,3 +29,16 @@ jobs:
         run: |
           make bots
           bots/cockpit-lib-update
+
+      - name: Sync cockpit npm dependency with Makefile
+        run: |
+          COMMIT=$(grep '^COCKPIT_REPO_COMMIT' Makefile | sed 's/COCKPIT_REPO_COMMIT *= *\([a-f0-9]*\).*/\1/')
+          CURRENT=$(grep '"cockpit"' package.json | sed 's|.*archive/\([a-f0-9]*\)\.tar\.gz.*|\1|')
+          if [ "$COMMIT" != "$CURRENT" ]; then
+            sed -i "s|cockpit/archive/[a-f0-9]*\.tar\.gz|cockpit/archive/${COMMIT}.tar.gz|" package.json
+            git add package.json
+            git commit -m "package.json: Update cockpit dependency to ${COMMIT:0:12}"
+            git push origin HEAD:cockpit-lib
+          else
+            echo "package.json already in sync"
+          fi

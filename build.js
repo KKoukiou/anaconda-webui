@@ -5,10 +5,10 @@ import fs from "fs";
 import { createRequire } from "module";
 import path from "path";
 
-import { cockpitPoEsbuildPlugin } from "./pkg/lib/cockpit-po-plugin.js";
-import { cockpitRsyncEsbuildPlugin } from "./pkg/lib/cockpit-rsync-plugin.js";
-import { cleanPlugin } from "./pkg/lib/esbuild-cleanup-plugin.js";
-import { cockpitCompressPlugin } from "./pkg/lib/esbuild-compress-plugin.js";
+import { cockpitPoEsbuildPlugin } from "cockpit/pkg/lib/cockpit-po-plugin.js";
+import { cockpitRsyncEsbuildPlugin } from "cockpit/pkg/lib/cockpit-rsync-plugin.js";
+import { cleanPlugin } from "cockpit/pkg/lib/esbuild-cleanup-plugin.js";
+import { cockpitCompressPlugin } from "cockpit/pkg/lib/esbuild-compress-plugin.js";
 
 const esbuild = await (async () => {
     try {
@@ -23,7 +23,7 @@ const esbuild = await (async () => {
 const production = process.env.NODE_ENV === "production";
 const watchMode = process.env.ESBUILD_WATCH === "true" || false;
 /* List of directories to use when resolving import statements */
-const nodePaths = ["pkg/lib"];
+const nodePaths = ["node_modules/cockpit/pkg/lib"];
 const outdir = "dist";
 
 // Obtain package name from package.json
@@ -65,6 +65,7 @@ const context = await esbuild.context({
     loader: {
         ".js": "jsx",
         ".py": "text",
+        ".sh": "text",
         ".txt": "text",
     },
     metafile: true,

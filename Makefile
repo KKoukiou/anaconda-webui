@@ -10,8 +10,8 @@ VERSION := $(shell T=$$(git describe 2>/dev/null) || T=1; echo $$T | tr '-' '.')
 TARFILE=$(RPM_NAME)-$(VERSION).tar.xz
 NODE_CACHE=$(RPM_NAME)-node-$(VERSION).tar.xz
 SPEC=$(RPM_NAME).spec
-# one example file in pkg/lib to check if it was already checked out
-COCKPIT_REPO_STAMP=pkg/lib/cockpit-po-plugin.js
+# one example file to check if cockpit repo files were already checked out
+COCKPIT_REPO_STAMP=test/common/run-tests
 # stamp file to check if/when npm install ran
 NODE_MODULES_TEST=package-lock.json
 
@@ -63,11 +63,11 @@ po/$(PACKAGE_NAME).js.pot:
 		--keyword=gettextCatalog.getString:1,3c --keyword=gettextCatalog.getPlural:2,3,4c \
 		--from-code=UTF-8 $$(find src/ -name '*.js' -o -name '*.jsx')
 
-po/$(PACKAGE_NAME).html.pot: $(COCKPIT_REPO_STAMP)
-	pkg/lib/html2po -o $@ $$(find src -name '*.html')
+po/$(PACKAGE_NAME).html.pot: $(NODE_MODULES_TEST)
+	node_modules/cockpit/pkg/lib/html2po -o $@ $$(find src -name '*.html')
 
-po/$(PACKAGE_NAME).manifest.pot: $(COCKPIT_REPO_STAMP)
-	pkg/lib/manifest2po src/manifest.json -o $@
+po/$(PACKAGE_NAME).manifest.pot: $(NODE_MODULES_TEST)
+	node_modules/cockpit/pkg/lib/manifest2po src/manifest.json -o $@
 
 po/$(PACKAGE_NAME).pot: po/$(PACKAGE_NAME).html.pot po/$(PACKAGE_NAME).js.pot po/$(PACKAGE_NAME).manifest.pot
 	msgcat --sort-output --output-file=$@ $^
@@ -157,6 +157,8 @@ $(TARFILE): $(DIST_TEST) $(SPEC)
 		dist/
 
 $(NODE_CACHE): $(NODE_MODULES_TEST)
+	find node_modules/cockpit -mindepth 1 -maxdepth 1 ! -name pkg -exec rm -rf {} +
+	find node_modules/cockpit/pkg -mindepth 1 -maxdepth 1 ! -name lib ! -name storaged -exec rm -rf {} +
 	tools/node-modules runtime-tar $(NODE_CACHE)
 
 node-cache: $(NODE_CACHE)
@@ -173,7 +175,6 @@ EXTRA_DIST = dist src firefox-theme
 # this has no API stability guarantee, so check out a stable tag when you start
 # a new project, use the latest release, and update it from time to time
 COCKPIT_REPO_FILES = \
-	pkg/lib \
 	test/common \
 	tools/node-modules \
 	$(NULL)

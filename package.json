@@ -45,6 +45,7 @@
     "react-dom": "18.3.1",
     "sass": "1.98.0",
     "stacktrace-js": "2.0.2",
-    "throttle-debounce": "5.0.2"
+    "throttle-debounce": "5.0.2",
+    "cockpit": "https://github.com/cockpit-project/cockpit/archive/c6d63dc6f.tar.gz"
   }
 }

@@ -25,7 +25,7 @@ jobs:
         id: list_tests
         run: |
           # Bring ./test/common
-          make pkg/lib/cockpit-po-plugin.js
+          make test/common/run-tests
           ./test/common/run-tests -l > valid_tests.txt
           echo "tests<<EOF" >> $GITHUB_OUTPUT
           cat valid_tests.txt >> $GITHUB_OUTPUT

@@ -14,8 +14,8 @@ import { convertToCockpitLang } from "./helpers/language.js";
 import { LoginPage } from "./components/login/LoginPage.jsx";
 
 import "./components/app.scss";
-import "../pkg/lib/patternfly/patternfly-6-cockpit.scss";
-import "../pkg/lib/patternfly/patternfly-6-overrides.scss";
+import "patternfly/patternfly-6-cockpit.scss";
+import "patternfly/patternfly-6-overrides.scss";
 
 document.addEventListener("DOMContentLoaded", () => {
     const root = createRoot(document.getElementById("app"));

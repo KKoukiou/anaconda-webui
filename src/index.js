@@ -14,7 +14,7 @@ import { convertToCockpitLang } from "./helpers/language.js";
 import { ApplicationWithErrorBoundary } from "./components/app.jsx";
 
 import "./components/app.scss";
-import "../pkg/lib/patternfly/patternfly-6-cockpit.scss";
+import "patternfly/patternfly-6-cockpit.scss";
 /*
  * PF4 overrides need to come after the JSX components imports because
  * these are importing CSS stylesheets that we are overriding
@@ -22,7 +22,7 @@ import "../pkg/lib/patternfly/patternfly-6-cockpit.scss";
  * out of the dist/index.js and since it will maintain the order of the imported CSS,
  * the overrides will be correctly in the end of our stylesheet.
  */
-import "../pkg/lib/patternfly/patternfly-6-overrides.scss";
+import "patternfly/patternfly-6-overrides.scss";
 
 document.addEventListener("DOMContentLoaded", function () {
     cockpit.transport.wait(() => cockpit.hint("ignore_transport_health_check", { data: true }));

@@ -4,7 +4,7 @@
  */
 import cockpit from "cockpit";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Banner } from "@patternfly/react-core/dist/esm/components/Banner/index.js";
 import { Button } from "@patternfly/react-core/dist/esm/components/Button/index.js";
 import { Content } from "@patternfly/react-core/dist/esm/components/Content/index.js";
@@ -15,9 +15,8 @@ import { ArrowLeftIcon } from "@patternfly/react-icons/dist/esm/icons/arrow-left
 import { ExclamationTriangleIcon } from "@patternfly/react-icons/dist/esm/icons/exclamation-triangle-icon";
 import { TimesIcon } from "@patternfly/react-icons/dist/esm/icons/times-icon";
 
-import { useMaybeBackdrop } from "../../../hooks/CockpitIntegration.jsx";
-
 import { CheckStorageDialog } from "./CheckStorageDialog.jsx";
+import { CockpitStorageEmbed } from "./CockpitStorageEmbed.jsx";
 import { ModifyStorageSideBar } from "./CockpitStorageIntegrationSidebar.jsx";
 
 import "./CockpitStorageIntegration.scss";
@@ -82,19 +81,7 @@ export const CockpitStorageIntegration = ({
     setShowStorage,
 }) => {
     const [showDialog, setShowDialog] = useState(false);
-    const [isIframeMounted, setIsIframeMounted] = useState(false);
     const [isConfirmed, setIsConfirmed] = useState(false);
-    const backdropClass = useMaybeBackdrop();
-    const handleIframeLoad = () => setIsIframeMounted(true);
-
-    useEffect(() => {
-        if (isIframeMounted) {
-            const iframe = document.getElementById("cockpit-storage-frame");
-            iframe.contentWindow.addEventListener("error", exception => {
-                onCritFail({ context: _("Storage plugin failed") })({ message: exception.error.message, stack: exception.error.stack });
-            });
-        }
-    }, [isIframeMounted, onCritFail]);
 
     const handleConfirmOpenModal = () => {
         setIsConfirmed(true);
@@ -115,7 +102,7 @@ export const CockpitStorageIntegration = ({
             />
             <Modal
               aria-label={_("Configure storage")}
-              className={backdropClass + " " + idPrefix + "-modal-page-section"}
+              className={idPrefix + "-modal-page-section"}
               isOpen={isConfirmed}
               showClose={false}
               variant={ModalVariant.large}>
@@ -134,12 +121,7 @@ export const CockpitStorageIntegration = ({
                 </Banner>
                 <div className={idPrefix + "-page-section-cockpit-storage"}>
                     <PageSection hasBodyWrapper={false}>
-                        <iframe
-                          src="/cockpit/@localhost/storage/index.html"
-                          name="cockpit-storage"
-                          id="cockpit-storage-frame"
-                          onLoad={handleIframeLoad}
-                          className={idPrefix + "-iframe-cockpit-storage"} />
+                        <CockpitStorageEmbed />
                     </PageSection>
                     <ModifyStorageSideBar />
                 </div>
