@@ -17,7 +17,6 @@ export const OsReleaseContext = createContext(null);
 export const PayloadContext = createContext(null);
 export const RuntimeContext = createContext(null);
 export const StorageContext = createContext(null);
-export const StorageDefaultsContext = createContext(null);
 export const SystemTypeContext = createContext(null);
 export const TargetSystemRootContext = createContext(null);
 export const UsersContext = createContext(null);
@@ -80,20 +79,17 @@ const SystemInfoContextWrapper = ({ appVersion, children, conf, osRelease }) => 
     }, []);
 
     const systemType = conf?.["Installation System"].type;
-    const defaultScheme = conf?.Storage.default_scheme;
 
     return (
         <OsReleaseContext.Provider value={osRelease}>
             <SystemTypeContext.Provider value={{ desktopVariant, systemType }}>
-                <StorageDefaultsContext.Provider value={{ defaultScheme }}>
-                    <TargetSystemRootContext.Provider value={conf["Installation Target"].system_root}>
-                        <UserInterfaceContext.Provider value={conf["User Interface"]}>
-                            <AppVersionContext.Provider value={appVersion}>
-                                {children}
-                            </AppVersionContext.Provider>
-                        </UserInterfaceContext.Provider>
-                    </TargetSystemRootContext.Provider>
-                </StorageDefaultsContext.Provider>
+                <TargetSystemRootContext.Provider value={conf["Installation Target"].system_root}>
+                    <UserInterfaceContext.Provider value={conf["User Interface"]}>
+                        <AppVersionContext.Provider value={appVersion}>
+                            {children}
+                        </AppVersionContext.Provider>
+                    </UserInterfaceContext.Provider>
+                </TargetSystemRootContext.Provider>
             </SystemTypeContext.Provider>
         </OsReleaseContext.Provider>
     );
