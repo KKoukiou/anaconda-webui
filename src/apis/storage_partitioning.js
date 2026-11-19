@@ -27,6 +27,10 @@ import {
 import {
     getSelectedDisks,
 } from "./storage_disks_selection.js";
+import {
+    removeDevice,
+    shrinkDevice,
+} from "./storage_partitioning_automatic_resizable.js";
 
 const INTERFACE_NAME_STORAGE = "org.fedoraproject.Anaconda.Modules.Storage";
 const INTERFACE_NAME_PARTITIONING = "org.fedoraproject.Anaconda.Modules.Storage.Partitioning";
@@ -420,12 +424,24 @@ export const getPartitioningLayout = async ({ partitioning }) => {
  *
  * @param {Object} request      An automatic partitioning request
  * @param {boolean} configure   Whether to configure the partitioning immediately
+ * @param {Array}  reclaimActions Reclaim actions to replay on the fresh device tree
  *
  * @returns {Promise}           Resolves the partitioning path and optional layout
  */
-export const createPartitioningFromRequest = async ({ configure = false, request }) => {
+export const createPartitioningFromRequest = async ({ configure = false, reclaimActions = [], request }) => {
     const partitioning = await createPartitioning({ method: "AUTOMATIC" });
     await setPartitioningRequest({ partitioning, request });
+
+    if (reclaimActions.length > 0) {
+        const deviceTree = await getDeviceTree({ partitioning });
+        for (const action of reclaimActions) {
+            if (action.type === "remove") {
+                await removeDevice({ device: action.device, deviceTree });
+            } else if (action.type === "shrink") {
+                await shrinkDevice({ device: action.device, deviceTree, newSize: action.newSize });
+            }
+        }
+    }
 
     if (!configure) {
         return { partitioning };

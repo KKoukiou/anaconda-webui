@@ -44,7 +44,7 @@ import "./ReclaimSpaceModal.scss";
 const _ = cockpit.gettext;
 const idPrefix = "reclaim-space-modal";
 
-export const ReclaimSpaceModal = ({ onClose, onNext }) => {
+export const ReclaimSpaceModal = ({ dispatch, onClose, onNext }) => {
     const { isFormDisabled } = useContext(PageContext) ?? {};
     const { diskSelection, partitioning } = useContext(StorageContext);
     const devices = useOriginalDevices();
@@ -93,6 +93,19 @@ export const ReclaimSpaceModal = ({ onClose, onNext }) => {
                 }
             }
         }
+
+        const reclaimActions = Object.entries(unappliedActions).flatMap(([device, actions]) => {
+            if (isDeviceParentRemoved(device, devices, unappliedActions)) {
+                return [];
+            }
+            return actions.map(action => ({
+                device,
+                type: action.type,
+                ...(action.type === "shrink" && { newSize: action.value }),
+            }));
+        });
+        dispatch({ type: "SET_RECLAIM_ACTIONS", payload: { reclaimActions } });
+
         setOnNextClicked(true);
     };
 
