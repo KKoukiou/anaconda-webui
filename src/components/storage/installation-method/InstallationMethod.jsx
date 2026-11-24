@@ -113,7 +113,6 @@ const CustomFooter = ({ isReclaimSpaceCheckboxChecked }) => {
             const part = await getNewPartitioning({
                 currentPartitioning: partitioning,
                 homeReuseOptions,
-                method: "AUTOMATIC",
                 storageScenarioId,
             });
             setNewPartitioning(part);

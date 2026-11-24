@@ -30,6 +30,7 @@ import {
     getSupportedFileSystemTypes,
     getSupportedPartitioningSchemes,
 } from "../apis/storage_partitioning.js";
+import { getPartitioningPlan } from "../apis/storage_partitioning_interactive.js";
 
 export const getDevicesAction = () => {
     return async (dispatch) => {
@@ -169,6 +170,8 @@ export const getPartitioningDataAction = ({ partitioning, requests }) => {
                 const reqs = await gatherRequests({ partitioning });
 
                 props.requests = convertRequests(reqs);
+            } else if (props.method === "INTERACTIVE" && getPartitioningPlan(partitioning)) {
+                props.requests = convertRequests([getPartitioningPlan(partitioning).request]);
             } else if (props.method === "AUTOMATIC") {
                 const reqs = await getAutomaticPartitioningRequest({ partitioning });
 

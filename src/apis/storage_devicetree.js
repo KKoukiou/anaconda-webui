@@ -11,7 +11,6 @@ import {
 
 const INTERFACE_NAME_VIEWER = "org.fedoraproject.Anaconda.Modules.Storage.DeviceTree.Viewer";
 const INTERFACE_NAME_HANDLER = "org.fedoraproject.Anaconda.Modules.Storage.DeviceTree.Handler";
-const INTERFACE_NAME_RESIZABLE = "org.fedoraproject.Anaconda.Modules.Storage.DeviceTree.Resizable";
 const OBJECT_PATH = "/org/fedoraproject/Anaconda/Modules/Storage/DeviceTree";
 
 export class DeviceTree {
@@ -21,10 +20,6 @@ export class DeviceTree {
 
     callViewer (...args) {
         return _callClient(StorageClient, this.deviceTree, INTERFACE_NAME_VIEWER, ...args);
-    }
-
-    callResizable (...args) {
-        return _callClient(StorageClient, this.deviceTree, INTERFACE_NAME_RESIZABLE, ...args);
     }
 
     callHandler (...args) {

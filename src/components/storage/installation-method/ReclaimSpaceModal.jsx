@@ -28,7 +28,7 @@ import { OutlinedQuestionCircleIcon } from "@patternfly/react-icons/dist/esm/ico
 import { TrashIcon } from "@patternfly/react-icons/dist/esm/icons/trash-icon";
 import { UndoIcon } from "@patternfly/react-icons/dist/esm/icons/undo-icon";
 
-import { isDeviceShrinkable, removeDevice, shrinkDevice } from "../../../apis/storage_partitioning_automatic_resizable.js";
+import { addPartitioningPlanAction, isDeviceResizable } from "../../../apis/storage_partitioning_interactive.js";
 
 import { deviceHasEncryptionKey, getDeviceAncestors, getDeviceTypeInfo, isDeviceEncrypted, unitMultiplier } from "../../../helpers/storage.js";
 
@@ -71,15 +71,14 @@ export const ReclaimSpaceModal = ({ onClose, onNext }) => {
             for (const action of actions) {
                 try {
                     if (action.type === "remove") {
-                        await removeDevice({
-                            device,
-                            deviceTree: partitioning.deviceTree.path,
+                        await addPartitioningPlanAction({
+                            action: { device, type: "remove" },
+                            partitioning: partitioning.path,
                         });
                     } else if (action.type === "shrink") {
-                        await shrinkDevice({
-                            device,
-                            deviceTree: partitioning.deviceTree.path,
-                            newSize: action.value,
+                        await addPartitioningPlanAction({
+                            action: { device, size: action.value, type: "shrink" },
+                            partitioning: partitioning.path,
                         });
                     }
                 } catch (error) {
@@ -426,15 +425,15 @@ const useIsDeviceShrinkable = ({ device }) => {
 
     useEffect(() => {
         const getIsShrinkable = async () => {
-            const isShrinkable = await isDeviceShrinkable({
+            const isShrinkable = await isDeviceResizable({
                 device,
-                deviceTree: partitioning.deviceTree.path,
+                partitioning: partitioning.path,
             });
 
             setIsShrinkable(isShrinkable);
         };
         getIsShrinkable();
-    }, [device, partitioning.deviceTree.path]);
+    }, [device, partitioning.path]);
 
     return isShrinkable;
 };

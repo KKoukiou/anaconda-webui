@@ -27,6 +27,12 @@ import {
 import {
     getSelectedDisks,
 } from "./storage_disks_selection.js";
+import {
+    createInteractivePartitioning,
+    getPartitioningPlan,
+    schedulePartitioningPlan,
+    setPartitioningPlan,
+} from "./storage_partitioning_interactive.js";
 
 const INTERFACE_NAME_STORAGE = "org.fedoraproject.Anaconda.Modules.Storage";
 const INTERFACE_NAME_PARTITIONING = "org.fedoraproject.Anaconda.Modules.Storage.Partitioning";
@@ -114,7 +120,13 @@ export const getDeviceTree = ({ partitioning }) => {
  * @param {string} partitioning    DBus path to a partitioning
  * @param {string} passphrase      passphrase for disk encryption
  */
-export const partitioningSetPassphrase = ({ partitioning, passphrase }) => {
+export const partitioningSetPassphrase = async ({ partitioning, passphrase }) => {
+    if (getPartitioningPlan(partitioning)) {
+        const request = await getPartitioningRequest({ partitioning });
+        request.passphrase = cockpit.variant("s", passphrase);
+        return setPartitioningRequest({ partitioning, request });
+    }
+
     return new StorageClient().client.call(
         partitioning,
         INTERFACE_NAME_PARTITIONING_AUTOMATIC,
@@ -180,9 +192,15 @@ export const partitioningSetHomeReuse = async ({ homeReuseOptions, partitioning 
 };
 
 /**
- * @returns {Promise}           The request of automatic partitioning
+ * @returns {Promise}           The automatic partitioning request, kept in the plan
+ *                              for interactive partitionings
  */
-export const getPartitioningRequest = ({ partitioning }) => {
+export const getPartitioningRequest = async ({ partitioning }) => {
+    const plan = getPartitioningPlan(partitioning);
+    if (plan) {
+        return { ...plan.request };
+    }
+
     return (
         new StorageClient().client.call(
             partitioning,
@@ -235,7 +253,12 @@ export const getAutomaticPartitioningRequest = ({ partitioning }) => {
  * @param {string} partitioning     DBus path to a partitioning
  * @param {Object} request          A data object with the request
  */
-export const setPartitioningRequest = ({ partitioning, request }) => {
+export const setPartitioningRequest = async ({ partitioning, request }) => {
+    const plan = getPartitioningPlan(partitioning);
+    if (plan) {
+        return setPartitioningPlan(partitioning, { ...plan, request });
+    }
+
     return new StorageClient().client.call(
         partitioning,
         "org.freedesktop.DBus.Properties",
@@ -357,13 +380,14 @@ const configurationSchemeFromDBus = Object.fromEntries(
  *
  * @param {Object} request          An automatic partitioning request from the store
  * @param {string} defaultFileSystem File system to report when the request leaves it open
+ * @param {string} defaultScheme    Scheme to report when the request leaves it open
  *
  * @returns {Object}                The configuration the request describes
  */
-export const getAutopartConfiguration = (request, defaultFileSystem) => ({
+export const getAutopartConfiguration = (request = {}, defaultFileSystem, defaultScheme) => ({
     excluded: request["excluded-mount-points"] || [],
     fileSystem: request["file-system-type"] || defaultFileSystem,
-    scheme: configurationSchemeFromDBus[request["partitioning-scheme"]],
+    scheme: configurationSchemeFromDBus[request["partitioning-scheme"]] || defaultScheme,
 });
 
 /**
@@ -412,27 +436,53 @@ export const getPartitioningLayout = async ({ partitioning }) => {
 };
 
 /**
- * Create and set up an automatic partitioning request.
+ * Get the preparation actions of a guided partitioning scenario.
  *
- * The request becomes the current partitioning. With configure=true, run the
- * regular configuration task so its layout can be read. Without it, leave the
- * partitioning ready for applyStorage to configure exactly once.
+ * The interactive partitioning module does not clear any disks on its own,
+ * so the scenarios that use the whole disks have to clear them first.
+ *
+ * @param {string} storageScenarioId The id of the storage scenario
+ *
+ * @returns {Promise<Array>}         Actions for the partitioning plan
+ */
+export const getScenarioPlanActions = async ({ storageScenarioId }) => {
+    if (storageScenarioId !== "erase-all") {
+        return [];
+    }
+
+    const selectedDisks = await getSelectedDisks();
+    return selectedDisks.map(disk => ({ device: disk, type: "clear-disk" }));
+};
+
+/**
+ * Create and set up a guided partitioning from an automatic partitioning request.
+ *
+ * The request becomes the current partitioning. With configure=true, schedule
+ * the partitions right away so the layout can be read. Without it, leave the
+ * partitioning ready for applyStorage to schedule and configure exactly once.
  *
  * @param {Object} request      An automatic partitioning request
- * @param {boolean} configure   Whether to configure the partitioning immediately
+ * @param {string} storageScenarioId The id of the storage scenario
+ * @param {boolean} configure   Whether to schedule the partitions immediately
  *
  * @returns {Promise}           Resolves the partitioning path and optional layout
  */
-export const createPartitioningFromRequest = async ({ configure = false, request }) => {
-    const partitioning = await createPartitioning({ method: "AUTOMATIC" });
-    await setPartitioningRequest({ partitioning, request });
+export const createPartitioningFromRequest = async ({ configure = false, request, storageScenarioId }) => {
+    // The automatic partitioning module always reported a complete request.
+    // Keep the plan in the same shape, so that the UI can tell the scheme in use.
+    if (!request["partitioning-scheme"]) {
+        const defaultScheme = await getDefaultPartitioningScheme();
+        request = { ...request, "partitioning-scheme": configurationSchemeToDBus[defaultScheme] };
+    }
+
+    const actions = await getScenarioPlanActions({ storageScenarioId });
+    let partitioning = await createInteractivePartitioning({ actions, request });
 
     if (!configure) {
         return { partitioning };
     }
 
-    const tasks = await partitioningConfigureWithTask({ partitioning });
-    await runStorageTaskAsync({ task: tasks[0] });
+    partitioning = await schedulePartitioningPlan({ partitioning });
 
     return {
         layout: await getPartitioningLayout({ partitioning }),
@@ -440,7 +490,9 @@ export const createPartitioningFromRequest = async ({ configure = false, request
     };
 };
 
-export const applyStorage = async ({ devices, luks, partitioning }) => {
+export const applyStorage = async ({ devices, luks, partitioning: partitioningPath }) => {
+    let partitioning = partitioningPath;
+
     if (luks?.encrypted !== undefined) {
         await partitioningSetEncrypt({ encrypt: luks.encrypted, partitioning });
     }
@@ -469,6 +521,12 @@ export const applyStorage = async ({ devices, luks, partitioning }) => {
         }
     } else if (shouldResetBootDrive) {
         await setBootloaderDrive({ drive: "" });
+    }
+
+    if (method === "INTERACTIVE" && getPartitioningPlan(partitioning)) {
+        // Guided partitioning: let the interactive module allocate the layout
+        // from the request. This might recreate the partitioning.
+        partitioning = await schedulePartitioningPlan({ partitioning });
     }
 
     const configureTasks = await partitioningConfigureWithTask({ partitioning });

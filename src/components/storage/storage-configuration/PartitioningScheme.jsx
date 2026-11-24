@@ -99,7 +99,7 @@ const getOptionalMountPoints = ({ constraints, devices, excluded }) => {
             .sort();
 };
 
-const useLayoutPreview = ({ request }) => {
+const useLayoutPreview = ({ request, storageScenarioId }) => {
     const [preview, setPreview] = useState({ isLoading: true });
     const latestRequest = useRef(0);
     const queue = useRef(Promise.resolve());
@@ -120,7 +120,7 @@ const useLayoutPreview = ({ request }) => {
                 }
 
                 try {
-                    const { layout } = await createPartitioningFromRequest({ configure: true, request });
+                    const { layout } = await createPartitioningFromRequest({ configure: true, request, storageScenarioId });
                     if (requestId === latestRequest.current) {
                         setPreview({ devices: layout, isLoading: false });
                     }
@@ -133,7 +133,7 @@ const useLayoutPreview = ({ request }) => {
         }, PREVIEW_DEBOUNCE_MS);
 
         return () => clearTimeout(timer);
-    }, [request]);
+    }, [request, storageScenarioId]);
 
     return preview;
 };
@@ -232,7 +232,7 @@ const LayoutPreview = ({ devices, error }) => {
 };
 
 const ConfigureModal = ({ initialConfig, initialRequest, onCancel, onSave }) => {
-    const { partitioningOptions } = useContext(StorageContext);
+    const { partitioningOptions, storageScenarioId } = useContext(StorageContext);
     const { supportedFileSystems } = partitioningOptions;
     const schemes = partitioningOptions.supportedSchemes.map(describeScheme);
     const constraints = useMountPointConstraints();
@@ -245,7 +245,7 @@ const ConfigureModal = ({ initialConfig, initialRequest, onCancel, onSave }) => 
         () => getAutopartDBusRequest({ ...config, baseRequest: initialRequest, hasFileSystemType }),
         [config, hasFileSystemType, initialRequest]
     );
-    const { devices, error, isLoading } = useLayoutPreview({ request });
+    const { devices, error, isLoading } = useLayoutPreview({ request, storageScenarioId });
 
     // Compute the checkbox list once from the first preview, then keep it static
     const [optionalMountPoints, setOptionalMountPoints] = useState(null);
@@ -387,10 +387,12 @@ export const PartitioningScheme = () => {
     // soon as the screen is left and remounted.
     const config = getAutopartConfiguration(
         partitioning.requests[0],
-        partitioningOptions.defaultFileSystem
+        partitioningOptions.defaultFileSystem,
+        partitioningOptions.defaultScheme
     );
     const scheme = describeScheme(
-        partitioningOptions.supportedSchemes.find(s => s.id === config.scheme)
+        partitioningOptions.supportedSchemes.find(s => s.id === config.scheme) ??
+        { hasFileSystemType: false, id: config.scheme }
     );
 
     const openModal = async () => {
@@ -404,7 +406,7 @@ export const PartitioningScheme = () => {
     // applyStorage configures it exactly once; cancelling recreates the request
     // from before the modal opened.
     const closeWithRequest = async request => {
-        await createPartitioningFromRequest({ request });
+        await createPartitioningFromRequest({ request, storageScenarioId });
         setModalState();
     };
 

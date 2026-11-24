@@ -21,11 +21,11 @@ import {
 } from "../apis/storage_disk_initialization.js";
 import {
     createPartitioning,
+    createPartitioningFromRequest,
     getDeviceTree,
     getPartitioningRequest,
     partitioningSetHomeReuse,
     resetPartitioning,
-    setPartitioningRequest,
 } from "../apis/storage_partitioning.js";
 
 import {
@@ -204,12 +204,53 @@ export const useHomeReuseOptions = () => {
     };
 };
 
+/* Partitioning methods used for the guided (automatically generated) layouts. */
+const GUIDED_PARTITIONING_METHODS = ["AUTOMATIC", "INTERACTIVE"];
+
+/**
+ * Pick the partitioning method for a guided storage scenario.
+ *
+ * Guided layouts are scheduled in the interactive partitioning module so that
+ * they can be adjusted later. Reusing an existing installation still depends
+ * on the automatic partitioning module, which knows how to remove, reformat
+ * and reuse mount points of the existing system.
+ */
+const getGuidedPartitioningMethod = (storageScenarioId) => (
+    storageScenarioId === "home-reuse" ? "AUTOMATIC" : "INTERACTIVE"
+);
+
+/**
+ * Get the request a new guided partitioning starts from.
+ */
+const getInitialGuidedRequest = async ({ currentPartitioning, storageScenarioId }) => {
+    if (!GUIDED_PARTITIONING_METHODS.includes(currentPartitioning?.method)) {
+        return {};
+    }
+
+    const request = await getPartitioningRequest({ partitioning: currentPartitioning.path });
+
+    if (currentPartitioning.storageScenarioId === storageScenarioId) {
+        // Stay with the layout the user configured under this scenario.
+        return request;
+    }
+
+    // A different scenario starts from the default layout, but the
+    // encryption choice is independent and should survive the switch.
+    return Object.fromEntries(
+        ["encrypted", "passphrase"]
+                .filter(key => request[key] !== undefined)
+                .map(key => [key, request[key]])
+    );
+};
+
 export const getNewPartitioning = async ({
     currentPartitioning,
     homeReuseOptions,
-    method = "AUTOMATIC",
+    method,
     storageScenarioId,
 }) => {
+    method = method || getGuidedPartitioningMethod(storageScenarioId);
+
     const initializationMode = scenarios.find(sc => sc.id === storageScenarioId).initializationMode;
     await setInitializationMode({ mode: initializationMode });
 
@@ -217,31 +258,17 @@ export const getNewPartitioning = async ({
         await setInitializeLabelsEnabled({ enabled: true });
     }
 
+    if (method === "INTERACTIVE") {
+        const request = await getInitialGuidedRequest({ currentPartitioning, storageScenarioId });
+        const { partitioning } = await createPartitioningFromRequest({ request, storageScenarioId });
+
+        return partitioning;
+    }
+
     const part = await createPartitioning({ method });
 
     if (storageScenarioId === "home-reuse") {
         await partitioningSetHomeReuse({ homeReuseOptions, partitioning: part });
-    }
-
-    if (currentPartitioning?.method === method &&
-        method === "AUTOMATIC" &&
-        storageScenarioId !== "home-reuse") {
-        const request = await getPartitioningRequest({ partitioning: currentPartitioning.path });
-
-        if (currentPartitioning.storageScenarioId === storageScenarioId) {
-            // Stay with the layout the user configured under this scenario.
-            await setPartitioningRequest({ partitioning: part, request });
-        } else {
-            // A different scenario starts from the default layout, but the
-            // encryption choice is independent and should survive the switch.
-            await setPartitioningRequest({
-                partitioning: part,
-                request: {
-                    encrypted: request.encrypted,
-                    passphrase: request.passphrase,
-                }
-            });
-        }
     }
 
     return part;
